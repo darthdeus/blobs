@@ -1,0 +1,10 @@
+[package]
+name = "blobs"
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+description = "NOT-Soft body physics in 2D"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
