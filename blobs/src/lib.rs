@@ -1,14 +1,20 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+use glam::*;
+
+pub struct Collider {
+    pub position: Vec2,
+    pub rotation: f32,
+    pub scale: Vec2,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+type Id = u64;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub struct ColliderHandle(Id);
+pub struct RigidBodyHandle(Id);
+
+pub struct RigidBody {
+    pub position: Vec2,
+    pub rotation: f32,
+    pub scale: Vec2,
 }
+
+pub struct BlobPhysics {}
