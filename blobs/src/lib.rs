@@ -34,3 +34,5 @@ impl BlobPhysics {
         }
     }
 }
+
+pub struct ColliderBuilder {}
