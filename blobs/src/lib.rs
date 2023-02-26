@@ -3,6 +3,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use glam::*;
 use hecs::*;
 
+use log::info;
 use thunderdome::{Arena, Index};
 
 mod collider;
@@ -108,11 +109,11 @@ impl QueryPipeline {
 
     pub fn intersection_with_shape(
         &self,
-        rbd_set: &RigidBodySet,
-        col_set: &ColliderSet,
-        position: &Vec2,
-        shape: &dyn Shape,
-        filter: QueryFilter,
+        _rbd_set: &RigidBodySet,
+        _col_set: &ColliderSet,
+        _position: &Vec2,
+        _shape: &dyn Shape,
+        _filter: QueryFilter,
     ) -> Option<ColliderHandle> {
         None
     }
@@ -129,7 +130,7 @@ pub struct Physics {
 }
 
 impl Physics {
-    pub fn new(gravity: Vec2) -> Self {
+    pub fn new(_gravity: Vec2) -> Self {
         let (send, recv) = std::sync::mpsc::channel();
 
         Self {
@@ -159,6 +160,10 @@ impl Physics {
         for (col_a_id, col_a) in self.col_set.arena.iter() {
             for (col_b_id, col_b) in self.col_set.arena.iter() {
                 if !col_a.collision_groups.test(col_b.collision_groups) {
+                    info!(
+                        "skipping {:?} <-> {:?}",
+                        col_a.collision_groups, col_b.collision_groups
+                    );
                     return;
                 }
 
@@ -166,6 +171,7 @@ impl Physics {
                     col_a.absolute_position.distance(col_b.absolute_position);
 
                 if distance < col_a.size + col_b.size {
+                    info!("collision");
                     self.collision_send
                         .send(CollisionEvent::Started(
                             ColliderHandle(col_a_id),
