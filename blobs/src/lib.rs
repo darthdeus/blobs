@@ -36,3 +36,5 @@ impl BlobPhysics {
 }
 
 pub struct ColliderBuilder {}
+
+pub struct RigidBodyBuilder {}
