@@ -1,7 +1,9 @@
+use thunderdome::{Arena, Index};
+
 use crate::*;
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct RigidBodyHandle(Id);
+pub struct RigidBodyHandle(pub Index);
 
 #[derive(Copy, Clone, Debug)]
 pub struct RbdHandleComponent(pub RigidBodyHandle);

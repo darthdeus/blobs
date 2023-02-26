@@ -3,6 +3,8 @@ use std::sync::mpsc::Receiver;
 use glam::*;
 use hecs::*;
 
+use thunderdome::{Arena, Index};
+
 mod collider;
 mod query_filter;
 mod rigid_body;
@@ -81,10 +83,8 @@ pub struct Cuboid {
     pub half_extents: Vec2,
 }
 
-type Id = u64;
-
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct ColliderHandle(Id);
+pub struct ColliderHandle(Index);
 
 // pub struct BlobPhysics {
 //     bodies: Vec<RigidBody>,
@@ -114,7 +114,7 @@ impl QueryPipeline {
         shape: &dyn Shape,
         filter: QueryFilter,
     ) -> Option<ColliderHandle> {
-        todo!()
+        None
     }
 }
 
@@ -225,58 +225,72 @@ impl InteractionGroups {
     }
 }
 
-pub struct RigidBodySet {}
+pub struct RigidBodySet {
+    arena: Arena<RigidBody>,
+}
 
 impl RigidBodySet {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            arena: Arena::new(),
+        }
     }
 
     pub fn get(&self, handle: RigidBodyHandle) -> Option<&RigidBody> {
-        todo!();
+        self.arena.get(handle.0)
     }
 
     pub fn get_mut(
         &mut self,
         handle: RigidBodyHandle,
     ) -> Option<&mut RigidBody> {
-        todo!();
+        self.arena.get_mut(handle.0)
     }
 
     pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
-        todo!()
+        if self.arena.remove(handle.0).is_none() {
+            eprintln!(
+                "Trying to remove a rbd that doesn't exit anymore, id: {:?}",
+                handle.0
+            );
+        }
     }
 
     pub fn len(&self) -> usize {
-        todo!();
+        self.arena.len()
     }
 
-    fn insert(&self, rbd: RigidBody) -> RigidBodyHandle {
-        todo!()
+    fn insert(&mut self, body: RigidBody) -> RigidBodyHandle {
+        RigidBodyHandle(self.arena.insert(body))
     }
 }
 
-pub struct ColliderSet {}
+pub struct ColliderSet {
+    arena: Arena<Collider>,
+}
 
 impl ColliderSet {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            arena: Arena::new(),
+        }
     }
     pub fn get(&self, handle: ColliderHandle) -> Option<&Collider> {
-        todo!();
+        self.arena.get(handle.0)
     }
 
     pub fn len(&self) -> usize {
-        todo!();
+        self.arena.len()
     }
 
     fn insert_with_parent(
-        &self,
+        &mut self,
         collider: Collider,
         rbd_handle: RigidBodyHandle,
         rbd_set: &mut RigidBodySet,
     ) {
-        todo!()
+        self.arena.insert(collider);
+        // TODO: insert into rbd
     }
 }
 
