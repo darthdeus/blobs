@@ -2,19 +2,24 @@ use crate::*;
 
 #[derive(Clone, Debug)]
 pub struct Collider {
-    pub position: Vec2,
+    pub offset: Vec2,
     pub rotation: f32,
     pub scale: Vec2,
 
     pub user_data: u128,
     pub parent: Option<ColliderParent>,
 
+    pub size: f32,
+
     pub flags: ColliderFlags,
+
+    pub(crate) absolute_position: Vec2,
+    pub collision_groups: InteractionGroups,
 }
 
 impl Collider {
     pub fn parent(&self) -> Option<RigidBodyHandle> {
-        todo!();
+        self.parent.map(|x| x.handle)
     }
 
     pub fn is_sensor(&self) -> bool {
@@ -22,7 +27,7 @@ impl Collider {
     }
 
     pub fn translation(&self) -> Vec2 {
-        self.position
+        self.absolute_position
     }
 
     pub fn rotation(&self) -> Rotation {

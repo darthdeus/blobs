@@ -22,6 +22,7 @@ pub struct RigidBody {
     pub user_data: u128,
 
     pub body_type: RigidBodyType,
+    pub collision_groups: InteractionGroups,
 }
 
 impl RigidBody {
@@ -38,7 +39,6 @@ impl RigidBody {
     }
 
     pub fn colliders(&self) -> impl Iterator<Item = &ColliderHandle> {
-        // TODO: inefficient
         self.colliders.iter()
     }
 
