@@ -102,6 +102,10 @@ pub struct ColliderHandle(Id);
 pub struct QueryPipeline {}
 
 impl QueryPipeline {
+    pub fn new() -> Self {
+        Self {}
+    }
+
     pub fn intersection_with_shape(
         &self,
         rbd_set: &RigidBodySet,
@@ -125,7 +129,15 @@ pub struct Physics {
 
 impl Physics {
     pub fn new(gravity: Vec2) -> Self {
-        todo!();
+        let (send, recv) = std::sync::mpsc::channel();
+
+        Self {
+            rbd_set: RigidBodySet::new(),
+            col_set: ColliderSet::new(),
+            query_pipeline: QueryPipeline::new(),
+
+            collision_recv: recv,
+        }
     }
 
     pub fn step(&mut self, delta: f32) {}
@@ -144,7 +156,53 @@ impl Physics {
         collision_groups: InteractionGroups,
         components: impl DynamicBundle,
     ) -> Entity {
-        todo!()
+        let entity = world.reserve_entity();
+        let user_data: u128 = entity.to_bits().get().into();
+
+        let rbd = RigidBody {
+            position,
+            rotation: 0.0,
+            scale: Vec2::ONE,
+            velocity,
+            angular_velocity: 0.0,
+            colilders: vec![],
+            user_data,
+            body_type: RigidBodyType::KinematicVelocityBased,
+        };
+
+        let rbd_handle = self.rbd_set.insert(rbd);
+
+        let collider = Collider {
+            position,
+            rotation: 0.0,
+            scale: Vec2::ONE,
+            user_data,
+            parent: Some(ColliderParent {
+                handle: rbd_handle,
+                pos_wrt_parent: Vec2::ZERO,
+            }),
+            flags: ColliderFlags::default(),
+        };
+
+        // let collider = ColliderBuilder::ball(size)
+        //     .user_data(user_data)
+        //     .active_events(ActiveEvents::COLLISION_EVENTS)
+        //     .active_collision_types(
+        //         ActiveCollisionTypes::default()
+        //             | ActiveCollisionTypes::KINEMATIC_KINEMATIC,
+        //     )
+        //     .collision_groups(collision_groups);
+
+        self.col_set.insert_with_parent(
+            collider,
+            rbd_handle,
+            &mut self.rbd_set,
+        );
+
+        commands.insert(entity, (RbdHandleComponent(rbd_handle),));
+        commands.insert(entity, components);
+
+        entity
     }
 }
 
@@ -170,6 +228,10 @@ impl InteractionGroups {
 pub struct RigidBodySet {}
 
 impl RigidBodySet {
+    pub fn new() -> Self {
+        Self {}
+    }
+
     pub fn get(&self, handle: RigidBodyHandle) -> Option<&RigidBody> {
         todo!();
     }
@@ -188,17 +250,33 @@ impl RigidBodySet {
     pub fn len(&self) -> usize {
         todo!();
     }
+
+    fn insert(&self, rbd: RigidBody) -> RigidBodyHandle {
+        todo!()
+    }
 }
 
 pub struct ColliderSet {}
 
 impl ColliderSet {
+    pub fn new() -> Self {
+        Self {}
+    }
     pub fn get(&self, handle: ColliderHandle) -> Option<&Collider> {
         todo!();
     }
 
     pub fn len(&self) -> usize {
         todo!();
+    }
+
+    fn insert_with_parent(
+        &self,
+        collider: Collider,
+        rbd_handle: RigidBodyHandle,
+        rbd_set: &mut RigidBodySet,
+    ) {
+        todo!()
     }
 }
 

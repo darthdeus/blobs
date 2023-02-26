@@ -3,6 +3,9 @@ use crate::*;
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct RigidBodyHandle(Id);
 
+#[derive(Copy, Clone, Debug)]
+pub struct RbdHandleComponent(pub RigidBodyHandle);
+
 #[derive(Clone, Debug)]
 pub struct RigidBody {
     pub position: Vec2,
