@@ -1,4 +1,4 @@
-use thunderdome::{Arena, Index};
+use thunderdome::Index;
 
 use crate::*;
 
@@ -17,7 +17,7 @@ pub struct RigidBody {
     pub velocity: Vec2,
     pub angular_velocity: f32,
 
-    pub colilders: Vec<Collider>,
+    pub colliders: Vec<ColliderHandle>,
 
     pub user_data: u128,
 
@@ -33,12 +33,13 @@ impl RigidBody {
         &self.velocity
     }
 
-    pub fn set_linvel(&mut self, velocity: Vec2, wakeup: bool) {
+    pub fn set_linvel(&mut self, velocity: Vec2, _wakeup: bool) {
         self.velocity = velocity;
     }
 
-    pub fn colliders(&self) -> Vec<&ColliderHandle> {
-        todo!()
+    pub fn colliders(&self) -> impl Iterator<Item = &ColliderHandle> {
+        // TODO: inefficient
+        self.colliders.iter()
     }
 
     pub fn body_type(&self) -> RigidBodyType {

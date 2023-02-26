@@ -140,10 +140,22 @@ impl Physics {
         }
     }
 
-    pub fn step(&mut self, delta: f32) {}
+    pub fn step(&mut self, delta: f32) {
+        for (_, body) in self.rbd_set.arena.iter_mut() {
+            if body.body_type == RigidBodyType::KinematicVelocityBased {
+                body.position += body.velocity * delta;
+            }
+        }
+    }
 
     pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
-        todo!()
+        if let Some(rbd) = self.rbd_set.get(handle) {
+            for col_handle in rbd.colliders() {
+                self.col_set.remove(*col_handle);
+            }
+        }
+
+        self.rbd_set.remove_rbd(handle);
     }
 
     pub fn spawn_kinematic_ball(
@@ -165,7 +177,7 @@ impl Physics {
             scale: Vec2::ONE,
             velocity,
             angular_velocity: 0.0,
-            colilders: vec![],
+            colliders: vec![],
             user_data,
             body_type: RigidBodyType::KinematicVelocityBased,
         };
@@ -283,7 +295,11 @@ impl ColliderSet {
         self.arena.len()
     }
 
-    fn insert_with_parent(
+    pub fn remove(&mut self, handle: ColliderHandle) {
+        self.arena.remove(handle.0);
+    }
+
+    pub fn insert_with_parent(
         &mut self,
         collider: Collider,
         rbd_handle: RigidBodyHandle,
