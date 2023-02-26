@@ -37,7 +37,7 @@ impl Collider {
         todo!()
     }
 
-    pub fn shape(&self) -> &dyn std::any::Any {
+    pub fn shape(&self) -> &dyn Shape {
         todo!()
     }
 }

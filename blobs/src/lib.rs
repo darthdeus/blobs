@@ -1,15 +1,62 @@
+use std::sync::mpsc::Receiver;
+
 use glam::*;
 use hecs::*;
 
 mod collider;
-mod rigid_body;
 mod query_filter;
+mod rigid_body;
 
 pub use collider::*;
 pub use query_filter::*;
 pub use rigid_body::*;
 
-pub trait Shape {}
+pub struct Ball {
+    pub radius: f32,
+}
+
+impl Shape for Ball {
+    fn as_ball(&self) -> Option<&Ball> {
+        Some(self)
+    }
+
+    fn as_cuboid(&self) -> Option<&Cuboid> {
+        None
+    }
+}
+
+impl Ball {
+    pub fn new(radius: f32) -> Self {
+        Self { radius }
+    }
+}
+
+pub trait Shape {
+    fn as_ball(&self) -> Option<&Ball>;
+    fn as_cuboid(&self) -> Option<&Cuboid>;
+}
+
+#[derive(Copy, Clone, Hash, Debug)]
+/// Events occurring when two colliders start or stop colliding
+pub enum CollisionEvent {
+    /// Event occurring when two colliders start colliding
+    Started(ColliderHandle, ColliderHandle, CollisionEventFlags),
+    /// Event occurring when two colliders stop colliding.
+    Stopped(ColliderHandle, ColliderHandle, CollisionEventFlags),
+}
+
+bitflags::bitflags! {
+    /// Flags providing more information regarding a collision event.
+    #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
+    pub struct CollisionEventFlags: u32 {
+        /// Flag set if at least one of the colliders involved in the
+        /// collision was a sensor when the event was fired.
+        const SENSOR = 0b0001;
+        /// Flag set if a `CollisionEvent::Stopped` was fired because
+        /// at least one of the colliders was removed.
+        const REMOVED = 0b0010;
+    }
+}
 
 pub struct Rotation {}
 
@@ -62,7 +109,8 @@ impl QueryPipeline {
         position: &Vec2,
         shape: &dyn Shape,
         filter: QueryFilter,
-    ) {
+    ) -> Option<ColliderHandle> {
+        todo!()
     }
 }
 
@@ -70,6 +118,9 @@ pub struct Physics {
     pub rbd_set: RigidBodySet,
     pub col_set: ColliderSet,
     pub query_pipeline: QueryPipeline,
+
+    pub collision_recv: Receiver<CollisionEvent>,
+    // pub contact_force_recv: Receiver<ContactForceEvent>,
 }
 
 impl Physics {
