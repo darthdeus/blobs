@@ -3,7 +3,6 @@ use std::sync::mpsc::{Receiver, Sender};
 use glam::*;
 use hecs::*;
 
-use log::info;
 use thunderdome::{Arena, Index};
 
 mod collider;
@@ -159,19 +158,18 @@ impl Physics {
 
         for (col_a_id, col_a) in self.col_set.arena.iter() {
             for (col_b_id, col_b) in self.col_set.arena.iter() {
+                if col_a_id == col_b_id {
+                    continue;
+                }
+
                 if !col_a.collision_groups.test(col_b.collision_groups) {
-                    info!(
-                        "skipping {:?} <-> {:?}",
-                        col_a.collision_groups, col_b.collision_groups
-                    );
-                    return;
+                    continue;
                 }
 
                 let distance =
                     col_a.absolute_position.distance(col_b.absolute_position);
 
                 if distance < col_a.size + col_b.size {
-                    info!("collision");
                     self.collision_send
                         .send(CollisionEvent::Started(
                             ColliderHandle(col_a_id),
