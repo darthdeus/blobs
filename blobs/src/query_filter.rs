@@ -28,7 +28,7 @@ impl QueryFilterFlags {
     /// Tests if the given collider should be taken into account by a scene query, based
     /// on the flags on `self`.
     #[inline]
-    pub fn test(&self, bodies: &RigidBodySet, collider: &Collider) -> bool {
+    pub fn test(&self, _bodies: &RigidBodySet, _collider: &Collider) -> bool {
         todo!()
         // if self.is_empty() {
         //     // No filter.
@@ -90,9 +90,9 @@ impl<'a> QueryFilter<'a> {
     #[inline]
     pub fn test(
         &self,
-        bodies: &RigidBodySet,
-        handle: ColliderHandle,
-        collider: &Collider,
+        _bodies: &RigidBodySet,
+        _handle: ColliderHandle,
+        _collider: &Collider,
     ) -> bool {
         todo!()
         // self.exclude_collider != Some(handle)
