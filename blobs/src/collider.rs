@@ -13,7 +13,7 @@ pub struct Collider {
 
     pub flags: ColliderFlags,
 
-    pub(crate) absolute_position: Vec2,
+    pub absolute_position: Vec2,
     pub collision_groups: InteractionGroups,
 }
 

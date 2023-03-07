@@ -1,8 +1,11 @@
 use std::sync::mpsc::{Receiver, Sender};
 // use rayon::prelude::*;
 
+#[derive(Copy, Clone, Debug)]
+pub struct Velocity(pub Vec2);
+
 use glam::*;
-use hecs::*;
+pub use hecs::*;
 
 use thunderdome::{Arena, Index};
 
@@ -192,69 +195,6 @@ impl Physics {
 
         self.rbd_set.remove_rbd(handle);
     }
-
-    pub fn spawn_kinematic_ball(
-        &mut self,
-        world: &World,
-        commands: &mut CommandBuffer,
-        size: f32,
-        position: Vec2,
-        velocity: Vec2,
-        collision_groups: InteractionGroups,
-        components: impl DynamicBundle,
-    ) -> Entity {
-        let entity = world.reserve_entity();
-        let user_data: u128 = entity.to_bits().get().into();
-
-        let rbd = RigidBody {
-            position,
-            rotation: 0.0,
-            scale: Vec2::ONE,
-            velocity,
-            angular_velocity: 0.0,
-            colliders: vec![],
-            user_data,
-            body_type: RigidBodyType::KinematicVelocityBased,
-            collision_groups,
-        };
-
-        let rbd_handle = self.rbd_set.insert(rbd);
-
-        let collider = Collider {
-            offset: Vec2::ZERO,
-            absolute_position: position,
-            rotation: 0.0,
-            scale: Vec2::ONE,
-            user_data,
-            parent: Some(ColliderParent {
-                handle: rbd_handle,
-                pos_wrt_parent: Vec2::ZERO,
-            }),
-            size,
-            flags: ColliderFlags::default(),
-            collision_groups,
-        };
-
-        // let collider = ColliderBuilder::ball(size)
-        //     .user_data(user_data)
-        //     .active_events(ActiveEvents::COLLISION_EVENTS)
-        //     .active_collision_types(
-        //         ActiveCollisionTypes::default()
-        //             | ActiveCollisionTypes::KINEMATIC_KINEMATIC,
-        //     )
-        //     .collision_groups(collision_groups);
-
-        self.col_set.insert_with_parent(
-            collider,
-            rbd_handle,
-            &mut self.rbd_set,
-        );
-
-        commands.insert(entity, (RbdHandleComponent(rbd_handle),));
-        commands.insert(entity, components);
-
-        entity
-    }
 }
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -267,10 +207,7 @@ pub struct InteractionGroups {
 impl InteractionGroups {
     /// Initializes with the given interaction groups and interaction mask.
     pub const fn new(memberships: Group, filter: Group) -> Self {
-        Self {
-            memberships,
-            filter,
-        }
+        Self { memberships, filter }
     }
 
     /// Allow interaction with everything.
@@ -295,16 +232,18 @@ impl InteractionGroups {
         self
     }
 
-    /// Check if interactions should be allowed based on the interaction memberships and filter.
+    /// Check if interactions should be allowed based on the interaction
+    /// memberships and filter.
     ///
-    /// An interaction is allowed iff. the memberships of `self` contain at least one bit set to 1 in common
-    /// with the filter of `rhs`, and vice-versa.
+    /// An interaction is allowed iff. the memberships of `self` contain at
+    /// least one bit set to 1 in common with the filter of `rhs`, and
+    /// vice-versa.
     #[inline]
     pub const fn test(self, rhs: Self) -> bool {
-        // NOTE: since const ops is not stable, we have to convert `Group` into u32
-        // to use & operator in const context.
-        (self.memberships.bits() & rhs.filter.bits()) != 0
-            && (rhs.memberships.bits() & self.filter.bits()) != 0
+        // NOTE: since const ops is not stable, we have to convert `Group` into
+        // u32 to use & operator in const context.
+        (self.memberships.bits() & rhs.filter.bits()) != 0 &&
+            (rhs.memberships.bits() & self.filter.bits()) != 0
     }
 }
 
@@ -320,9 +259,7 @@ pub struct RigidBodySet {
 
 impl RigidBodySet {
     pub fn new() -> Self {
-        Self {
-            arena: Arena::new(),
-        }
+        Self { arena: Arena::new() }
     }
 
     pub fn get(&self, handle: RigidBodyHandle) -> Option<&RigidBody> {
@@ -349,7 +286,7 @@ impl RigidBodySet {
         self.arena.len()
     }
 
-    fn insert(&mut self, body: RigidBody) -> RigidBodyHandle {
+    pub fn insert(&mut self, body: RigidBody) -> RigidBodyHandle {
         RigidBodyHandle(self.arena.insert(body))
     }
 }
@@ -360,9 +297,7 @@ pub struct ColliderSet {
 
 impl ColliderSet {
     pub fn new() -> Self {
-        Self {
-            arena: Arena::new(),
-        }
+        Self { arena: Arena::new() }
     }
 
     pub fn get(&self, handle: ColliderHandle) -> Option<&Collider> {
