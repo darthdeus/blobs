@@ -1,6 +1,6 @@
 use crate::*;
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Collider {
     pub offset: Vec2,
     pub rotation: f32,
@@ -15,6 +15,8 @@ pub struct Collider {
 
     pub absolute_position: Vec2,
     pub collision_groups: InteractionGroups,
+
+    pub shape: Box<dyn Shape>,
 }
 
 impl Collider {
@@ -43,7 +45,7 @@ impl Collider {
     }
 
     pub fn shape(&self) -> &dyn Shape {
-        todo!()
+        &*self.shape
     }
 }
 
@@ -57,7 +59,8 @@ pub struct ColliderParent {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-/// A set of flags for controlling collision/intersection filtering, modification, and events.
+/// A set of flags for controlling collision/intersection filtering,
+/// modification, and events.
 pub struct ColliderFlags {
     // pub active_collision_types: ActiveCollisionTypes,
     // pub collision_groups: InteractionGroups,

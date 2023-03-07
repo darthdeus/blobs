@@ -1,4 +1,4 @@
-use std::sync::mpsc::{Receiver, Sender};
+use std::{sync::mpsc::{Receiver, Sender}, fmt::Debug};
 // use rayon::prelude::*;
 
 #[derive(Copy, Clone, Debug)]
@@ -17,6 +17,14 @@ pub use collider::*;
 pub use query_filter::*;
 pub use rigid_body::*;
 
+pub fn groups(
+    memberships: impl Into<Group>,
+    filter: impl Into<Group>,
+) -> InteractionGroups {
+    InteractionGroups::new(memberships.into(), filter.into())
+}
+
+#[derive(Clone, Debug)]
 pub struct Ball {
     pub radius: f32,
 }
@@ -37,7 +45,7 @@ impl Ball {
     }
 }
 
-pub trait Shape {
+pub trait Shape: 'static + Debug {
     fn as_ball(&self) -> Option<&Ball>;
     fn as_cuboid(&self) -> Option<&Cuboid>;
 }
