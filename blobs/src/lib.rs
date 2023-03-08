@@ -1,5 +1,7 @@
-use std::{sync::mpsc::{Receiver, Sender}, fmt::Debug};
-// use rayon::prelude::*;
+use std::{
+    fmt::Debug,
+    sync::mpsc::{Receiver, Sender},
+};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Velocity(pub Vec2);
@@ -168,12 +170,8 @@ impl Physics {
             }
         }
 
-        for (col_a_id, col_a) in self.col_set.arena.iter() {
-            for (col_b_id, col_b) in self.col_set.arena.iter() {
-                if col_a_id == col_b_id {
-                    continue;
-                }
-
+        for (i, (col_a_id, col_a)) in self.col_set.arena.iter().enumerate() {
+            for (col_b_id, col_b) in self.col_set.arena.iter().take(i) {
                 if !col_a.collision_groups.test(col_b.collision_groups) {
                     continue;
                 }
