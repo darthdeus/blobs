@@ -16,7 +16,9 @@ pub struct RigidBody {
     pub rotation: f32,
     pub scale: Vec2,
 
+    pub acceleration: Vec2,
     pub velocity: Vec2,
+
     pub angular_velocity: f32,
 
     pub radius: f32,

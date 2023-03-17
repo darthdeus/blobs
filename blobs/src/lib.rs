@@ -143,6 +143,8 @@ pub struct Physics {
     pub collision_send: Sender<CollisionEvent>,
     pub collision_recv: Receiver<CollisionEvent>,
     // pub contact_force_recv: Receiver<ContactForceEvent>,
+    pub accumulator: f64,
+    pub time: f64,
 }
 
 impl Physics {
@@ -158,48 +160,79 @@ impl Physics {
 
             collision_send: send,
             collision_recv: recv,
+
+            accumulator: 0.0,
+            time: 0.0,
         }
     }
 
-    pub fn step(&mut self, delta: f32) {
-        for (_, body) in self.rbd_set.arena.iter_mut() {
-            if body.body_type == RigidBodyType::KinematicVelocityBased {
-                let velocity = body.position - body.position_old;
+    pub fn step(&mut self, substeps: i32, frame_time: f64) {
+        self.accumulator += frame_time;
 
-                body.position_old = body.position;
-                body.position +=
-                    velocity * delta + self.gravity * delta * delta;
-            }
+        let delta = 1.0 / 60.0;
+        let mut max_steps = 50;
+
+        while self.accumulator >= delta && max_steps > 0 {
+            self.integrate(substeps, delta as f32);
+
+            self.accumulator -= delta;
+            self.time += delta;
+            max_steps -= 1;
         }
+    }
 
-        for (_, body) in self.rbd_set.arena.iter_mut() {
-            let obj = Vec2::ZERO;
-            let to_obj = body.position - obj;
-            let dist = to_obj.length();
-            let radius = 4.0;
+    fn integrate(&mut self, substeps: i32, delta: f32) {
+        let delta = delta / substeps as f32;
 
-            if dist > (radius - body.radius) {
-                let n = to_obj / dist;
-                body.position = obj + n * (radius - body.radius);
+        for _ in 0..substeps {
+            for (_, body) in self.rbd_set.arena.iter_mut() {
+                if body.body_type == RigidBodyType::KinematicVelocityBased {
+                    let velocity = body.position - body.position_old;
+
+                    body.position_old = body.position;
+                    body.position +=
+                        velocity * delta + self.gravity * delta * delta;
+                }
             }
-        }
 
-        let keys = self.rbd_set.arena.iter().map(|(idx, _)| idx).collect_vec();
+            for (_, body) in self.rbd_set.arena.iter_mut() {
+                let obj = Vec2::ZERO;
+                let to_obj = body.position - obj;
+                let dist = to_obj.length();
+                let radius = 4.0;
 
-        for (i, idx_a) in keys.iter().enumerate() {
-            for idx_b in keys.iter().take(i) {
-                let (Some(obj_a), Some(obj_b)) = self.rbd_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
+                if dist > (radius - body.radius) {
+                    let n = to_obj / dist;
+                    body.position = obj + n * (radius - body.radius);
+                }
+            }
 
-                let axis = obj_a.position - obj_b.position;
-                let distance = axis.length();
-                let min_dist = obj_a.radius + obj_b.radius;
+            let keys =
+                self.rbd_set.arena.iter().map(|(idx, _)| idx).collect_vec();
 
-                if distance < min_dist {
-                    let n = axis / distance;
-                    let delta = min_dist - distance;
+            for (i, idx_a) in keys.iter().enumerate() {
+                for idx_b in keys.iter().take(i) {
+                    let (Some(obj_a), Some(obj_b)) = self.rbd_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
 
-                    obj_a.position += 0.5 * delta * n;
-                    obj_b.position -= 0.5 * delta * n;
+                    let axis = obj_a.position - obj_b.position;
+                    let distance = axis.length();
+                    let min_dist = obj_a.radius + obj_b.radius;
+
+                    if distance < min_dist {
+                        let n = axis / distance;
+                        let delta = min_dist - distance;
+
+                        obj_a.position += 0.5 * delta * n;
+                        obj_b.position -= 0.5 * delta * n;
+
+                        self.collision_send
+                            .send(CollisionEvent::Started(
+                                ColliderHandle(*idx_a),
+                                ColliderHandle(*idx_b),
+                                CollisionEventFlags::empty(),
+                            ))
+                            .unwrap();
+                    }
                 }
             }
         }
@@ -228,27 +261,28 @@ impl Physics {
             }
         }
 
-        for (i, (col_a_id, col_a)) in self.col_set.arena.iter().enumerate() {
-            for (col_b_id, col_b) in self.col_set.arena.iter().take(i) {
-                if !col_a.collision_groups.test(col_b.collision_groups) {
-                    continue;
-                }
-
-                let distance =
-                    col_a.absolute_position.distance(col_b.absolute_position);
-
-                if distance < col_a.size + col_b.size {
-                    self.collision_send
-                        .send(CollisionEvent::Started(
-                            ColliderHandle(col_a_id),
-                            ColliderHandle(col_b_id),
-                            CollisionEventFlags::empty(),
-                        ))
-                        .unwrap();
-                }
-            }
-        }
+        // for (i, (col_a_id, col_a)) in self.col_set.arena.iter().enumerate() {
+        //     for (col_b_id, col_b) in self.col_set.arena.iter().take(i) {
+        //         if !col_a.collision_groups.test(col_b.collision_groups) {
+        //             continue;
+        //         }
+        //
+        //         let distance =
+        //             col_a.absolute_position.distance(col_b.absolute_position);
+        //
+        //         if distance < col_a.size + col_b.size {
+        //             self.collision_send
+        //                 .send(CollisionEvent::Started(
+        //                     ColliderHandle(col_a_id),
+        //                     ColliderHandle(col_b_id),
+        //                     CollisionEventFlags::empty(),
+        //                 ))
+        //                 .unwrap();
+        //         }
+        //     }
+        // }
     }
+
 
     pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
         if let Some(rbd) = self.rbd_set.get(handle) {
