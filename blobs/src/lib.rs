@@ -214,6 +214,10 @@ impl Physics {
                 for idx_b in keys.iter().take(i) {
                     let (Some(obj_a), Some(obj_b)) = self.rbd_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
 
+                    // if !col_a.collision_groups.test(col_b.collision_groups) {
+                    //     continue;
+                    // }
+
                     let axis = obj_a.position - obj_b.position;
                     let distance = axis.length();
                     let min_dist = obj_a.radius + obj_b.radius;
