@@ -9,6 +9,7 @@ pub struct Velocity(pub Vec2);
 use glam::*;
 pub use hecs::*;
 
+use itertools::Itertools;
 use thunderdome::{Arena, Index};
 
 mod collider;
@@ -133,6 +134,8 @@ impl QueryPipeline {
 }
 
 pub struct Physics {
+    pub gravity: Vec2,
+
     pub rbd_set: RigidBodySet,
     pub col_set: ColliderSet,
     pub query_pipeline: QueryPipeline,
@@ -143,10 +146,12 @@ pub struct Physics {
 }
 
 impl Physics {
-    pub fn new(_gravity: Vec2) -> Self {
+    pub fn new(gravity: Vec2) -> Self {
         let (send, recv) = std::sync::mpsc::channel();
 
         Self {
+            gravity,
+
             rbd_set: RigidBodySet::new(),
             col_set: ColliderSet::new(),
             query_pipeline: QueryPipeline::new(),
@@ -159,9 +164,61 @@ impl Physics {
     pub fn step(&mut self, delta: f32) {
         for (_, body) in self.rbd_set.arena.iter_mut() {
             if body.body_type == RigidBodyType::KinematicVelocityBased {
-                body.position += body.velocity * delta;
-            }
+                let velocity = body.position - body.position_old;
 
+                body.position_old = body.position;
+                body.position +=
+                    velocity * delta + self.gravity * delta * delta;
+            }
+        }
+
+        for (_, body) in self.rbd_set.arena.iter_mut() {
+            let obj = Vec2::ZERO;
+            let to_obj = body.position - obj;
+            let dist = to_obj.length();
+            let radius = 4.0;
+
+            if dist > (radius - 0.5) {
+                let n = to_obj / dist;
+                body.position = obj + n * (radius - 0.5);
+            }
+        }
+
+        let keys = self.rbd_set.arena.iter().map(|(idx, _)| idx).collect_vec();
+
+        for (i, idx_a) in keys.iter().enumerate() {
+            for idx_b in keys.iter().take(i) {
+                let (Some(obj_a), Some(obj_b)) = self.rbd_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
+
+                let axis = obj_a.position - obj_b.position;
+                let distance = axis.length();
+
+                if distance < 1.0 {
+                    let n = axis / distance;
+                    let delta = 1.0 - distance;
+
+                    obj_a.position += 0.5 * delta * n;
+                    obj_b.position -= 0.5 * delta * n;
+                }
+            }
+        }
+
+        // for (_, obj_a) in self.rbd_set.arena.iter_mut() {
+        //     for (_, obj_b) in self.rbd_set.arena.iter_mut() {
+        //         // let obj = Vec2::ZERO;
+        //         // let to_obj = body.position - obj;
+        //         // let dist = to_obj.length();
+        //         // let radius = 3.0;
+        //         //
+        //         // if dist > (radius - 0.5) {
+        //         //     let n = to_obj / dist;
+        //         //     body.position = obj + n * (dist - 0.5);
+        //         // }
+        //     }
+        // }
+
+
+        for (_, body) in self.rbd_set.arena.iter_mut() {
             for col_handle in body.colliders() {
                 if let Some(collider) = self.col_set.get_mut(*col_handle) {
                     collider.absolute_position =
@@ -260,7 +317,7 @@ impl Default for InteractionGroups {
 }
 
 pub struct RigidBodySet {
-    arena: Arena<RigidBody>,
+    pub arena: Arena<RigidBody>,
 }
 
 impl RigidBodySet {
