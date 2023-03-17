@@ -62,6 +62,7 @@ pub struct ColliderParent {
 /// A set of flags for controlling collision/intersection filtering,
 /// modification, and events.
 pub struct ColliderFlags {
+    pub is_sensor: bool,
     // pub active_collision_types: ActiveCollisionTypes,
     // pub collision_groups: InteractionGroups,
     // pub solver_groups: InteractionGroups,
@@ -72,6 +73,7 @@ pub struct ColliderFlags {
 impl Default for ColliderFlags {
     fn default() -> Self {
         Self {
+            is_sensor: false,
             // active_collision_types: ActiveCollisionTypes::default(),
             // collision_groups: InteractionGroups::all(),
             // solver_groups: InteractionGroups::all(),

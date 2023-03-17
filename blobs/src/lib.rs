@@ -239,11 +239,13 @@ impl Physics {
                     let min_dist = col_a.radius + col_b.radius;
 
                     if distance < min_dist {
-                        let n = axis / distance;
-                        let delta = min_dist - distance;
+                        if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
+                            let n = axis / distance;
+                            let delta = min_dist - distance;
 
-                        rbd_a.position += 0.5 * delta * n;
-                        rbd_b.position -= 0.5 * delta * n;
+                            rbd_a.position += 0.5 * delta * n;
+                            rbd_b.position -= 0.5 * delta * n;
+                        }
 
                         // col_a.position += 0.5 * delta * n;
                         // col_b.position -= 0.5 * delta * n;
