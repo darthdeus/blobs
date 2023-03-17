@@ -19,6 +19,8 @@ pub struct RigidBody {
     pub velocity: Vec2,
     pub angular_velocity: f32,
 
+    pub radius: f32,
+
     pub colliders: Vec<ColliderHandle>,
 
     pub user_data: u128,

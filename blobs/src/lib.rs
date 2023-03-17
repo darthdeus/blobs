@@ -178,9 +178,9 @@ impl Physics {
             let dist = to_obj.length();
             let radius = 4.0;
 
-            if dist > (radius - 0.5) {
+            if dist > (radius - body.radius) {
                 let n = to_obj / dist;
-                body.position = obj + n * (radius - 0.5);
+                body.position = obj + n * (radius - body.radius);
             }
         }
 
@@ -192,10 +192,11 @@ impl Physics {
 
                 let axis = obj_a.position - obj_b.position;
                 let distance = axis.length();
+                let min_dist = obj_a.radius + obj_b.radius;
 
-                if distance < 1.0 {
+                if distance < min_dist {
                     let n = axis / distance;
-                    let delta = 1.0 - distance;
+                    let delta = min_dist - distance;
 
                     obj_a.position += 0.5 * delta * n;
                     obj_b.position -= 0.5 * delta * n;
