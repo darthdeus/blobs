@@ -195,39 +195,58 @@ impl Physics {
                 }
             }
 
-            for (_, body) in self.rbd_set.arena.iter_mut() {
-                let obj = Vec2::ZERO;
-                let to_obj = body.position - obj;
-                let dist = to_obj.length();
-                let radius = 4.0;
 
-                if dist > (radius - body.radius) {
-                    let n = to_obj / dist;
-                    body.position = obj + n * (radius - body.radius);
+            for (_, body) in self.rbd_set.arena.iter_mut() {
+                for col_handle in body.colliders() {
+                    if let Some(collider) = self.col_set.get_mut(*col_handle) {
+                        collider.absolute_position =
+                            body.position + collider.offset;
+                    }
                 }
             }
 
+            // for (_, body) in self.rbd_set.arena.iter_mut() {
+            //     let obj = Vec2::ZERO;
+            //     let to_obj = body.position - obj;
+            //     let dist = to_obj.length();
+            //     let radius = 4.0;
+            //
+            //     if dist > (radius - body.radius) {
+            //         let n = to_obj / dist;
+            //         body.position = obj + n * (radius - body.radius);
+            //     }
+            // }
+
             let keys =
-                self.rbd_set.arena.iter().map(|(idx, _)| idx).collect_vec();
+                self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
 
             for (i, idx_a) in keys.iter().enumerate() {
                 for idx_b in keys.iter().take(i) {
-                    let (Some(obj_a), Some(obj_b)) = self.rbd_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
+                    let (Some(col_a), Some(col_b)) = self.col_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
 
-                    // if !col_a.collision_groups.test(col_b.collision_groups) {
-                    //     continue;
-                    // }
+                    let Some(parent_a) = col_a.parent else { continue; };
+                    let Some(parent_b) = col_b.parent else { continue; };
 
-                    let axis = obj_a.position - obj_b.position;
+                    let (Some(rbd_a), Some(rbd_b)) = self.rbd_set.arena.get2_mut(parent_a.handle.0, parent_b.handle.0) else { continue; };
+
+                    if !col_a.collision_groups.test(col_b.collision_groups) {
+                        continue;
+                    }
+
+                    let axis =
+                        col_a.absolute_position - col_b.absolute_position;
                     let distance = axis.length();
-                    let min_dist = obj_a.radius + obj_b.radius;
+                    let min_dist = col_a.radius + col_b.radius;
 
                     if distance < min_dist {
                         let n = axis / distance;
                         let delta = min_dist - distance;
 
-                        obj_a.position += 0.5 * delta * n;
-                        obj_b.position -= 0.5 * delta * n;
+                        rbd_a.position += 0.5 * delta * n;
+                        rbd_b.position -= 0.5 * delta * n;
+
+                        // col_a.position += 0.5 * delta * n;
+                        // col_b.position -= 0.5 * delta * n;
 
                         self.collision_send
                             .send(CollisionEvent::Started(
@@ -254,16 +273,6 @@ impl Physics {
         //         // }
         //     }
         // }
-
-
-        for (_, body) in self.rbd_set.arena.iter_mut() {
-            for col_handle in body.colliders() {
-                if let Some(collider) = self.col_set.get_mut(*col_handle) {
-                    collider.absolute_position =
-                        body.position + collider.offset;
-                }
-            }
-        }
 
         // for (i, (col_a_id, col_a)) in self.col_set.arena.iter().enumerate() {
         //     for (col_b_id, col_b) in self.col_set.arena.iter().take(i) {

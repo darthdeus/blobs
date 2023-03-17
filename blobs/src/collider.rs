@@ -9,7 +9,7 @@ pub struct Collider {
     pub user_data: u128,
     pub parent: Option<ColliderParent>,
 
-    pub size: f32,
+    pub radius: f32,
 
     pub flags: ColliderFlags,
 
