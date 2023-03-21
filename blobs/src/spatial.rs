@@ -1,15 +1,25 @@
 use glam::Vec2;
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+
+pub type CellIndex = (i32, i32);
+pub type Id = u64;
+
+#[derive(Copy, Clone, Debug)]
+struct CellPoint {
+    id: Id,
+    position: Vec2,
+}
 
 pub struct SpatialHash {
     cell_size: f32,
-    hash_map: HashMap<(i32, i32), Vec<Vec2>>,
+    next_id: u64,
+    hash_map: HashMap<CellIndex, Vec<CellPoint>>,
 }
 
 impl SpatialHash {
     pub fn new(cell_size: f32) -> Self {
-        Self { cell_size, hash_map: HashMap::new() }
+        Self { cell_size, next_id: 0, hash_map: HashMap::new() }
     }
 
     fn hash_point(&self, point: Vec2) -> (i32, i32) {
@@ -19,24 +29,33 @@ impl SpatialHash {
         )
     }
 
-    pub fn insert(&mut self, point: Vec2) {
+    pub fn insert(&mut self, point: Vec2) -> Id {
         let hash = self.hash_point(point);
+        let id = self.next_id;
+        self.next_id += 1;
+
+        let point = CellPoint { id: 0, position: point };
+
         match self.hash_map.entry(hash) {
             Entry::Occupied(mut entry) => entry.get_mut().push(point),
             Entry::Vacant(entry) => {
                 entry.insert(vec![point]);
             }
         }
+
+        id
     }
 
-    pub fn remove(&mut self, point: Vec2) -> bool {
-        let hash = self.hash_point(point);
+    pub fn remove(&mut self, point: &CellPoint) -> bool {
+        let hash = self.hash_point(point.position);
+
         if let Some(points) = self.hash_map.get_mut(&hash) {
-            if let Some(index) = points.iter().position(|&p| p == point) {
+            if let Some(index) = points.iter().position(|&p| p.id == point.id) {
                 points.swap_remove(index);
                 return true;
             }
         }
+
         false
     }
 
