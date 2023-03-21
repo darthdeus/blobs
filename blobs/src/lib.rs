@@ -15,10 +15,12 @@ use thunderdome::{Arena, Index};
 mod collider;
 mod query_filter;
 mod rigid_body;
+mod spatial;
 
 pub use collider::*;
 pub use query_filter::*;
 pub use rigid_body::*;
+pub use spatial::*;
 
 pub fn groups(
     memberships: impl Into<Group>,
