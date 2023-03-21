@@ -1,6 +1,6 @@
 use glam::Vec2;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub type CellIndex = (i32, i32);
 pub type Id = u64;
@@ -79,12 +79,6 @@ impl SpatialHash {
             for y in min_hash.1..=max_hash.1 {
                 if let Some(points) = self.hash_map.get(&(x, y)) {
                     for &p in points {
-                        // if (p.position - point).length_squared() <=
-                        //     radius * radius
-                        // {
-                        //     results.push(p);
-                        // }
-
                         if (p.position - point).length() <= (radius + p.radius)
                         {
                             results.push(p);
@@ -96,6 +90,43 @@ impl SpatialHash {
 
         results
     }
+
+    pub fn query_with_cells(
+        &self,
+        position: Vec2,
+        radius: f32,
+    ) -> (Vec<CellPoint>, Vec<(i32, i32)>) {
+        let mut result_points = Vec::new();
+        let mut result_cells = HashSet::new();
+
+        let min_cell = self.hash_point(position - Vec2::splat(radius));
+        let max_cell = self.hash_point(position + Vec2::splat(radius));
+
+        for x in min_cell.0..=max_cell.0 {
+            for y in min_cell.1..=max_cell.1 {
+                let cell_key = (x, y);
+                result_cells.insert(cell_key);
+
+                if let Some(bucket) = self.hash_map.get(&cell_key) {
+                    for point in bucket {
+                        if point.position.distance(position) <=
+                            (radius + point.radius)
+                        {
+                            result_points.push(*point);
+                        }
+                    }
+                }
+            }
+        }
+
+        (result_points, result_cells.into_iter().collect())
+    }
+    // if (p.position - point).length_squared() <=
+    //     radius * radius
+    // {
+    //     results.push(p);
+    // }
+
 
     pub fn move_point(&mut self, point: CellPoint) -> bool {
         if self.remove(&point) {
