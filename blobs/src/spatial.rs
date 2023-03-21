@@ -6,15 +6,15 @@ pub type CellIndex = (i32, i32);
 pub type Id = u64;
 
 #[derive(Copy, Clone, Debug)]
-struct CellPoint {
-    id: Id,
-    position: Vec2,
+pub struct CellPoint {
+    pub id: Id,
+    pub position: Vec2,
 }
 
 pub struct SpatialHash {
-    cell_size: f32,
-    next_id: u64,
-    hash_map: HashMap<CellIndex, Vec<CellPoint>>,
+    pub cell_size: f32,
+    pub next_id: u64,
+    pub hash_map: HashMap<CellIndex, Vec<CellPoint>>,
 }
 
 impl SpatialHash {
@@ -22,7 +22,7 @@ impl SpatialHash {
         Self { cell_size, next_id: 0, hash_map: HashMap::new() }
     }
 
-    fn hash_point(&self, point: Vec2) -> (i32, i32) {
+    pub fn hash_point(&self, point: Vec2) -> (i32, i32) {
         (
             (point.x / self.cell_size).floor() as i32,
             (point.y / self.cell_size).floor() as i32,
@@ -30,11 +30,18 @@ impl SpatialHash {
     }
 
     pub fn insert(&mut self, point: Vec2) -> Id {
-        let hash = self.hash_point(point);
         let id = self.next_id;
         self.next_id += 1;
 
         let point = CellPoint { id: 0, position: point };
+
+        self.insert_with_id(point);
+
+        id
+    }
+
+    fn insert_with_id(&mut self, point: CellPoint) {
+        let hash = self.hash_point(point.position);
 
         match self.hash_map.entry(hash) {
             Entry::Occupied(mut entry) => entry.get_mut().push(point),
@@ -42,8 +49,6 @@ impl SpatialHash {
                 entry.insert(vec![point]);
             }
         }
-
-        id
     }
 
     pub fn remove(&mut self, point: &CellPoint) -> bool {
@@ -59,7 +64,7 @@ impl SpatialHash {
         false
     }
 
-    pub fn query(&self, point: Vec2, radius: f32) -> Vec<Vec2> {
+    pub fn query(&self, point: Vec2, radius: f32) -> Vec<CellPoint> {
         let mut results = Vec::new();
         let min_hash = self.hash_point(point - Vec2::splat(radius));
         let max_hash = self.hash_point(point + Vec2::splat(radius));
@@ -68,7 +73,9 @@ impl SpatialHash {
             for y in min_hash.1..=max_hash.1 {
                 if let Some(points) = self.hash_map.get(&(x, y)) {
                     for &p in points {
-                        if (p - point).length_squared() <= radius * radius {
+                        if (p.position - point).length_squared() <=
+                            radius * radius
+                        {
                             results.push(p);
                         }
                     }
@@ -79,9 +86,9 @@ impl SpatialHash {
         results
     }
 
-    pub fn move_point(&mut self, old_point: Vec2, new_point: Vec2) -> bool {
-        if self.remove(old_point) {
-            self.insert(new_point);
+    pub fn move_point(&mut self, point: CellPoint) -> bool {
+        if self.remove(&point) {
+            self.insert_with_id(point);
             true
         } else {
             false

@@ -16,6 +16,7 @@ mod collider;
 mod query_filter;
 mod rigid_body;
 mod spatial;
+mod tests;
 
 pub use collider::*;
 pub use query_filter::*;

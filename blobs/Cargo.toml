@@ -15,6 +15,7 @@ thunderdome = "0.6.0"
 log = "0.4.17"
 
 itertools = "0.10.5"
+assert_approx_eq = "1.1.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 rayon = "1.6.1"
