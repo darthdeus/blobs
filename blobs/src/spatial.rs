@@ -128,9 +128,9 @@ impl SpatialHash {
     // }
 
 
-    pub fn move_point(&mut self, point: CellPoint) -> bool {
-        if self.remove(&point) {
-            self.insert_with_id(point);
+    pub fn move_point(&mut self, id: Id, offset: Vec2) -> bool {
+        if self.remove(point) {
+            self.insert_with_id(*point);
             true
         } else {
             false
