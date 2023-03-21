@@ -91,49 +91,4 @@ impl SpatialHash {
         results
     }
 
-    pub fn query_with_cells(
-        &self,
-        position: Vec2,
-        radius: f32,
-    ) -> (Vec<CellPoint>, Vec<(i32, i32)>) {
-        let mut result_points = Vec::new();
-        let mut result_cells = HashSet::new();
-
-        let min_cell = self.hash_point(position - Vec2::splat(radius));
-        let max_cell = self.hash_point(position + Vec2::splat(radius));
-
-        for x in min_cell.0..=max_cell.0 {
-            for y in min_cell.1..=max_cell.1 {
-                let cell_key = (x, y);
-                result_cells.insert(cell_key);
-
-                if let Some(bucket) = self.hash_map.get(&cell_key) {
-                    for point in bucket {
-                        if point.position.distance(position) <=
-                            (radius + point.radius)
-                        {
-                            result_points.push(*point);
-                        }
-                    }
-                }
-            }
-        }
-
-        (result_points, result_cells.into_iter().collect())
-    }
-    // if (p.position - point).length_squared() <=
-    //     radius * radius
-    // {
-    //     results.push(p);
-    // }
-
-
-    pub fn move_point(&mut self, id: Id, offset: Vec2) -> bool {
-        if self.remove(point) {
-            self.insert_with_id(*point);
-            true
-        } else {
-            false
-        }
-    }
 }
