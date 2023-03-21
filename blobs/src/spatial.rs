@@ -11,6 +11,12 @@ pub struct CellPoint {
     pub position: Vec2,
 }
 
+impl PartialEq for CellPoint {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
 pub struct SpatialHash {
     pub cell_size: f32,
     pub next_id: u64,

@@ -44,4 +44,42 @@ mod tests {
             panic!("Cell not found");
         }
     }
+
+    #[test]
+    fn insert_and_query() {
+        let mut hash = SpatialHash::new(1.0);
+        let p1 = hash.insert(Vec2::new(0.0, 0.0));
+        let p2 = hash.insert(Vec2::new(2.0, 2.0));
+
+        let results = hash.query(Vec2::new(1.0, 1.0), 1.5);
+        assert_eq!(results.len(), 2);
+        assert!(results
+            .contains(&CellPoint { id: p1, position: Vec2::new(0.0, 0.0) }));
+        assert!(results
+            .contains(&CellPoint { id: p2, position: Vec2::new(2.0, 2.0) }));
+    }
+
+    #[test]
+    fn move_point() {
+        let mut hash = SpatialHash::new(1.0);
+        let p = hash.insert(Vec2::new(0.0, 0.0));
+
+        hash.move_point(CellPoint { id: p, position: Vec2::new(2.0, 2.0) });
+
+        let results = hash.query(Vec2::new(1.0, 1.0), 1.5);
+        assert_eq!(results.len(), 1);
+        assert!(results
+            .contains(&CellPoint { id: p, position: Vec2::new(2.0, 2.0) }));
+    }
+
+    #[test]
+    fn remove() {
+        let mut hash = SpatialHash::new(1.0);
+        let p = hash.insert(Vec2::new(0.0, 0.0));
+
+        hash.remove(&CellPoint { id: p, position: Vec2::new(0.0, 0.0) });
+
+        let results = hash.query(Vec2::new(0.0, 0.0), 1.5);
+        assert!(results.is_empty());
+    }
 }
