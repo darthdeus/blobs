@@ -8,6 +8,7 @@ pub type Id = u64;
 #[derive(Copy, Clone, Debug)]
 pub struct CellPoint {
     pub id: Id,
+    pub radius: f32,
     pub position: Vec2,
 }
 
@@ -35,15 +36,14 @@ impl SpatialHash {
         )
     }
 
-    pub fn insert(&mut self, point: Vec2) -> Id {
+    pub fn insert(&mut self, point: Vec2, radius: f32) -> CellPoint {
         let id = self.next_id;
         self.next_id += 1;
 
-        let point = CellPoint { id: 0, position: point };
+        let point = CellPoint { id, position: point, radius };
 
         self.insert_with_id(point);
-
-        id
+        point
     }
 
     fn insert_with_id(&mut self, point: CellPoint) {
@@ -79,8 +79,13 @@ impl SpatialHash {
             for y in min_hash.1..=max_hash.1 {
                 if let Some(points) = self.hash_map.get(&(x, y)) {
                     for &p in points {
-                        if (p.position - point).length_squared() <=
-                            radius * radius
+                        // if (p.position - point).length_squared() <=
+                        //     radius * radius
+                        // {
+                        //     results.push(p);
+                        // }
+
+                        if (p.position - point).length() <= (radius + p.radius)
                         {
                             results.push(p);
                         }
