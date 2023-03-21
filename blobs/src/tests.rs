@@ -29,20 +29,19 @@ mod tests {
     fn test_insert() {
         let mut spatial_hash = SpatialHash::new(100.0);
         let id = spatial_hash.insert(vec2(50.5, -25.5));
+
         assert_eq!(id, 0);
         assert_eq!(spatial_hash.next_id, 1);
 
         let cell_index = spatial_hash.hash_point(vec2(50.5, -25.5));
+        let cell = spatial_hash.hash_map.get(&cell_index).unwrap();
+        assert!(!cell.is_empty());
 
-        if let Some(cell) = spatial_hash.hash_map.get(&cell_index) {
-            assert!(!cell.is_empty());
-            let point = cell[0];
-            assert_eq!(point.id, 0);
-            assert_approx_eq!(point.position.x, 50.5);
-            assert_approx_eq!(point.position.y, -25.5);
-        } else {
-            panic!("Cell not found");
-        }
+        let point = cell[0];
+        assert_eq!(point.id, 0);
+
+        assert_approx_eq!(point.position.x, 50.5);
+        assert_approx_eq!(point.position.y, -25.5);
     }
 
     #[test]
@@ -68,8 +67,7 @@ mod tests {
 
         let results = hash.query(Vec2::new(1.0, 1.0), 1.5);
         assert_eq!(results.len(), 1);
-        assert!(results
-            .contains(&CellPoint { id: p, position: Vec2::new(2.0, 2.0) }));
+        assert!(results.contains(&CellPoint { id: p, position: Vec2::new(2.0, 2.0) }));
     }
 
     #[test]
