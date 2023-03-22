@@ -173,12 +173,14 @@ impl Physics {
     }
 
     pub fn step(&mut self, substeps: i32, frame_time: f64) {
+        let _span = tracy_client::span!("step");
         self.accumulator += frame_time;
 
         let delta = 1.0 / 60.0;
         let mut max_steps = 50;
 
         while self.accumulator >= delta && max_steps > 0 {
+            let _span = tracy_client::span!("substep");
             self.integrate(substeps, delta as f32);
 
             self.accumulator -= delta;
@@ -240,7 +242,7 @@ impl Physics {
     }
 
     pub fn update_collision_detection(&mut self) {
-        // Clear any existing collision events
+        let _span = tracy_client::span!("update_collision_detection");
 
         // Iterate over all colliders
         let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
