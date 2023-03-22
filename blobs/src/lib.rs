@@ -139,9 +139,11 @@ impl QueryPipeline {
 pub struct Physics {
     pub gravity: Vec2,
 
-    pub rbd_set: RigidBodySet,
+    pub(crate) rbd_set: RigidBodySet,
     pub col_set: ColliderSet,
     pub query_pipeline: QueryPipeline,
+
+    pub spatial_hash: SpatialHash,
 
     pub collision_send: Sender<CollisionEvent>,
     pub collision_recv: Receiver<CollisionEvent>,
@@ -166,6 +168,7 @@ impl Physics {
 
             accumulator: 0.0,
             time: 0.0,
+            spatial_hash: SpatialHash::new(2.0),
         }
     }
 
@@ -181,6 +184,153 @@ impl Physics {
             self.accumulator -= delta;
             self.time += delta;
             max_steps -= 1;
+        }
+    }
+
+    pub fn get_rbd(&self, handle: RigidBodyHandle) -> Option<&RigidBody> {
+        self.rbd_set.get(handle)
+    }
+
+    pub fn get_mut_rbd(
+        &mut self,
+        handle: RigidBodyHandle,
+    ) -> Option<&mut RigidBody> {
+        self.rbd_set.get_mut(handle)
+    }
+
+    pub fn rbd_count(&self) -> usize {
+        self.rbd_set.len()
+    }
+
+    pub fn insert_rbd(&mut self, rbd: RigidBody) -> RigidBodyHandle {
+        let position = rbd.position;
+        let radius = rbd.radius;
+
+        let handle = self.rbd_set.insert(rbd);
+        self.spatial_hash.insert_with_id(handle.0.to_bits(), position, radius);
+        handle
+    }
+
+    pub fn insert_collider_with_parent(
+        &mut self,
+        collider: Collider,
+        rbd_handle: RigidBodyHandle,
+    ) -> ColliderHandle {
+        self.col_set.insert_with_parent(collider, rbd_handle, &mut self.rbd_set)
+    }
+
+    pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
+        if let Some(rbd) = self.rbd_set.get(handle) {
+            for col_handle in rbd.colliders() {
+                self.col_set.remove(*col_handle);
+            }
+        }
+
+        self.rbd_set.remove_rbd(handle);
+        self.spatial_hash.remove(handle.0.to_bits());
+    }
+
+    pub fn update_rigid_body_position(&mut self, id: u64, offset: Vec2) {
+        if let Some(rigid_body) =
+            self.rbd_set.get_mut(RigidBodyHandle(Index::from_bits(id).unwrap()))
+        {
+            self.spatial_hash.move_point(id, offset);
+            rigid_body.position += offset;
+        }
+    }
+
+    pub fn update_collision_detection(&mut self) {
+        // Clear any existing collision events
+
+        // Iterate over all colliders
+        let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
+
+        for (_i, idx_a) in keys.iter().enumerate() {
+            let col_a = self.col_set.arena.get(*idx_a).unwrap();
+            let parent_a = col_a.parent.unwrap();
+            let rbd_a = self.rbd_set.arena.get(parent_a.handle.0).unwrap();
+
+            const MAX_COLLIDER_RADIUS: f32 = 10.0;
+
+            // Query the spatial hash for relevant rigid bodies
+            let relevant_rigid_bodies = self
+                .spatial_hash
+                .query(rbd_a.position, col_a.radius + MAX_COLLIDER_RADIUS);
+
+            for relevant_rigid_body_id in relevant_rigid_bodies {
+                if let Some((idx_b, col_b)) =
+                    self.col_set.arena.iter().find(|(_idx, col)| {
+                        col.parent.unwrap().handle.0.to_bits() ==
+                            relevant_rigid_body_id.id
+                    })
+                {
+                    if idx_a >= &idx_b {
+                        continue;
+                    }
+
+                    let parent_b = col_b.parent.unwrap();
+                    // let rbd_b =
+                    //     self.rbd_set.arena.get(parent_b.handle.0).unwrap();
+
+                    if !col_a.collision_groups.test(col_b.collision_groups) {
+                        continue;
+                    }
+
+                    if !col_a.collision_groups.test(col_b.collision_groups) {
+                        continue;
+                    }
+
+                    let axis =
+                        col_a.absolute_position - col_b.absolute_position;
+                    let distance = axis.length();
+                    let min_dist = col_a.radius + col_b.radius;
+
+                    if distance < min_dist {
+                        let parent_a_handle = parent_a.handle.0;
+                        let parent_b_handle = parent_b.handle.0;
+
+                        let (Some(rbd_a), Some(rbd_b)) = self
+                            .rbd_set
+                            .arena
+                            .get2_mut(parent_a_handle, parent_b_handle)
+                             else { continue; };
+
+                        if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
+                            let n = axis / distance;
+                            let delta = min_dist - distance;
+
+                            {
+                                let offset = 0.5 * delta * n;
+
+                                self.spatial_hash.move_point(
+                                    parent_a_handle.to_bits(),
+                                    offset,
+                                );
+                                rbd_a.position += offset;
+                            }
+
+
+                            {
+                                let offset = -0.5 * delta * n;
+
+                                self.spatial_hash.move_point(
+                                    parent_b_handle.to_bits(),
+                                    offset,
+                                );
+                                rbd_b.position += offset;
+                            }
+                        }
+
+                        self.collision_send
+                            .send(CollisionEvent::Started(
+                                ColliderHandle(*idx_a),
+                                ColliderHandle(idx_b),
+                                CollisionEventFlags::empty(),
+                            ))
+                            .unwrap();
+                    }
+                }
+            }
         }
     }
 
@@ -299,17 +449,6 @@ impl Physics {
         //         }
         //     }
         // }
-    }
-
-
-    pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
-        if let Some(rbd) = self.rbd_set.get(handle) {
-            for col_handle in rbd.colliders() {
-                self.col_set.remove(*col_handle);
-            }
-        }
-
-        self.rbd_set.remove_rbd(handle);
     }
 }
 
@@ -437,13 +576,15 @@ impl ColliderSet {
         collider: Collider,
         rbd_handle: RigidBodyHandle,
         rbd_set: &mut RigidBodySet,
-    ) {
+    ) -> ColliderHandle {
         let col_handle = self.arena.insert(collider);
 
         if let Some(rbd) = rbd_set.get_mut(rbd_handle) {
             rbd.colliders.push(ColliderHandle(col_handle));
         }
         // TODO: insert into rbd
+
+        ColliderHandle(col_handle)
     }
 }
 

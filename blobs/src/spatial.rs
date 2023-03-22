@@ -1,17 +1,19 @@
 use glam::Vec2;
 use std::collections::{HashMap, HashSet};
 
+use crate::RigidBodyHandle;
+
 pub type CellIndex = (i32, i32);
 pub type Id = u64;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Point {
-    pub id: u32,
+pub struct CellPoint {
+    pub id: u64,
     pub position: Vec2,
     pub radius: f32,
 }
 
-impl PartialEq for Point {
+impl PartialEq for CellPoint {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
@@ -19,9 +21,9 @@ impl PartialEq for Point {
 
 pub struct SpatialHash {
     pub cell_size: f32,
-    pub next_id: u32,
-    pub points: HashMap<u32, Point>,
-    pub grid: HashMap<(i32, i32), HashSet<u32>>,
+    pub next_id: u64,
+    pub points: HashMap<u64, CellPoint>,
+    pub grid: HashMap<(i32, i32), HashSet<u64>>,
 }
 
 impl SpatialHash {
@@ -41,11 +43,15 @@ impl SpatialHash {
         )
     }
 
-    pub fn insert(&mut self, position: Vec2, radius: f32) -> u32 {
+    pub fn insert(&mut self, position: Vec2, radius: f32) -> u64 {
         let id = self.next_id;
         self.next_id += 1;
+        self.insert_with_id(id, position, radius);
+        id
+    }
 
-        let point = Point { id, position, radius };
+    pub fn insert_with_id(&mut self, id: u64, position: Vec2, radius: f32) {
+        let point = CellPoint { id, position, radius };
         let cell_coords = self.get_cell_coords(point.position);
 
         self.grid
@@ -53,11 +59,9 @@ impl SpatialHash {
             .or_insert_with(HashSet::new)
             .insert(point.id);
         self.points.insert(point.id, point);
-
-        id
     }
 
-    pub fn remove(&mut self, id: u32) -> Option<Point> {
+    pub fn remove(&mut self, id: u64) -> Option<CellPoint> {
         if let Some(point) = self.points.remove(&id) {
             let cell_coords = self.get_cell_coords(point.position);
             if let Some(cell) = self.grid.get_mut(&cell_coords) {
@@ -69,7 +73,7 @@ impl SpatialHash {
         }
     }
 
-    pub fn move_point(&mut self, id: u32, offset: Vec2) -> Option<()> {
+    pub fn move_point(&mut self, id: u64, offset: Vec2) -> Option<()> {
         if let Some(point) = self.points.get(&id) {
             let old_position = point.position;
             let new_position = old_position + offset;
@@ -111,11 +115,32 @@ impl SpatialHash {
         ]
     }
 
+    pub fn query(&self, position: Vec2, query_radius: f32) -> Vec<CellPoint> {
+        let cell_coords = self.get_cell_coords(position);
+        let neighbor_cells = self.get_neighbor_cells(cell_coords);
+
+        let mut points_within_radius = Vec::new();
+        for cell_coords in &neighbor_cells {
+            if let Some(cell) = self.grid.get(cell_coords) {
+                for point_id in cell {
+                    let point = self.points.get(point_id).unwrap();
+                    if (point.position - position).length() - point.radius <=
+                        query_radius
+                    {
+                        points_within_radius.push(point.clone());
+                    }
+                }
+            }
+        }
+
+        points_within_radius
+    }
+
     pub fn query_with_cells(
         &self,
         position: Vec2,
         query_radius: f32,
-    ) -> (Vec<Point>, Vec<(i32, i32)>) {
+    ) -> (Vec<CellPoint>, Vec<(i32, i32)>) {
         let cell_coords = self.get_cell_coords(position);
         let neighbor_cells = self.get_neighbor_cells(cell_coords);
 
