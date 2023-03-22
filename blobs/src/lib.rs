@@ -139,7 +139,7 @@ impl QueryPipeline {
 pub struct Physics {
     pub gravity: Vec2,
 
-    pub(crate) rbd_set: RigidBodySet,
+    pub rbd_set: RigidBodySet,
     pub col_set: ColliderSet,
     pub query_pipeline: QueryPipeline,
 
