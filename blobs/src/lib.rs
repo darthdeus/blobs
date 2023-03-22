@@ -145,6 +145,8 @@ pub struct Physics {
 
     pub spatial_hash: SpatialHash,
 
+    pub use_spatial_hash: bool,
+
     pub collision_send: Sender<CollisionEvent>,
     pub collision_recv: Receiver<CollisionEvent>,
     // pub contact_force_recv: Receiver<ContactForceEvent>,
@@ -163,6 +165,8 @@ impl Physics {
             col_set: ColliderSet::new(),
             query_pipeline: QueryPipeline::new(),
 
+            use_spatial_hash: false,
+
             collision_send: send,
             collision_recv: recv,
 
@@ -177,10 +181,10 @@ impl Physics {
         self.accumulator += frame_time;
 
         let delta = 1.0 / 60.0;
-        let mut max_steps = 50;
+        let mut max_steps = 3;
 
         while self.accumulator >= delta && max_steps > 0 {
-            let _span = tracy_client::span!("substep");
+            let _span = tracy_client::span!("integrate");
             self.integrate(substeps, delta as f32);
 
             self.accumulator -= delta;
@@ -241,8 +245,54 @@ impl Physics {
         }
     }
 
-    pub fn update_collision_detection(&mut self) {
-        let _span = tracy_client::span!("update_collision_detection");
+    pub fn brute_force_collisions(&mut self) {
+        let _span = tracy_client::span!("brute_force_collisions");
+
+        let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
+
+        for (i, idx_a) in keys.iter().enumerate() {
+            for idx_b in keys.iter().take(i) {
+                let (Some(col_a), Some(col_b)) = self.col_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
+
+                let Some(parent_a) = col_a.parent else { continue; };
+                let Some(parent_b) = col_b.parent else { continue; };
+
+                let (Some(rbd_a), Some(rbd_b)) = self.rbd_set.arena.get2_mut(parent_a.handle.0, parent_b.handle.0) else { continue; };
+
+                if !col_a.collision_groups.test(col_b.collision_groups) {
+                    continue;
+                }
+
+                let axis = col_a.absolute_position - col_b.absolute_position;
+                let distance = axis.length();
+                let min_dist = col_a.radius + col_b.radius;
+
+                if distance < min_dist {
+                    if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
+                        let n = axis / distance;
+                        let delta = min_dist - distance;
+
+                        rbd_a.position += 0.5 * delta * n;
+                        rbd_b.position -= 0.5 * delta * n;
+                    }
+
+                    // col_a.position += 0.5 * delta * n;
+                    // col_b.position -= 0.5 * delta * n;
+
+                    self.collision_send
+                        .send(CollisionEvent::Started(
+                            ColliderHandle(*idx_a),
+                            ColliderHandle(*idx_b),
+                            CollisionEventFlags::empty(),
+                        ))
+                        .unwrap();
+                }
+            }
+        }
+    }
+
+    pub fn spatial_collisions(&mut self) {
+        let _span = tracy_client::span!("spatial_collisions");
 
         // Iterate over all colliders
         let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
@@ -259,13 +309,9 @@ impl Physics {
                 .spatial_hash
                 .query(rbd_a.position, col_a.radius + MAX_COLLIDER_RADIUS);
 
-            for relevant_rigid_body_id in relevant_rigid_bodies {
-                if let Some((idx_b, col_b)) =
-                    self.col_set.arena.iter().find(|(_idx, col)| {
-                        col.parent.unwrap().handle.0.to_bits() ==
-                            relevant_rigid_body_id.id
-                    })
-                {
+            for cell_point in relevant_rigid_bodies {
+                let idx_b = Index::from_bits(cell_point.id).unwrap();
+                if let Some(col_b) = self.col_set.arena.get(idx_b) {
                     if idx_a >= &idx_b {
                         continue;
                     }
@@ -340,22 +386,30 @@ impl Physics {
         let delta = delta / substeps as f32;
 
         for _ in 0..substeps {
-            for (_, body) in self.rbd_set.arena.iter_mut() {
-                if body.body_type == RigidBodyType::KinematicVelocityBased {
-                    let velocity = body.position - body.position_old;
+            let _span = tracy_client::span!("substep");
 
-                    body.position_old = body.position;
-                    body.position +=
-                        velocity * delta + self.gravity * delta * delta;
+            {
+                let _span = tracy_client::span!("update positions");
+
+                for (_, body) in self.rbd_set.arena.iter_mut() {
+                    if body.body_type == RigidBodyType::KinematicVelocityBased {
+                        let velocity = body.position - body.position_old;
+
+                        body.position_old = body.position;
+                        body.position +=
+                            velocity * delta + self.gravity * delta * delta;
+                    }
                 }
-            }
 
 
-            for (_, body) in self.rbd_set.arena.iter_mut() {
-                for col_handle in body.colliders() {
-                    if let Some(collider) = self.col_set.get_mut(*col_handle) {
-                        collider.absolute_position =
-                            body.position + collider.offset;
+                for (_, body) in self.rbd_set.arena.iter_mut() {
+                    for col_handle in body.colliders() {
+                        if let Some(collider) =
+                            self.col_set.get_mut(*col_handle)
+                        {
+                            collider.absolute_position =
+                                body.position + collider.offset;
+                        }
                     }
                 }
             }
@@ -372,48 +426,10 @@ impl Physics {
             //     }
             // }
 
-            let keys =
-                self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
-
-            for (i, idx_a) in keys.iter().enumerate() {
-                for idx_b in keys.iter().take(i) {
-                    let (Some(col_a), Some(col_b)) = self.col_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
-
-                    let Some(parent_a) = col_a.parent else { continue; };
-                    let Some(parent_b) = col_b.parent else { continue; };
-
-                    let (Some(rbd_a), Some(rbd_b)) = self.rbd_set.arena.get2_mut(parent_a.handle.0, parent_b.handle.0) else { continue; };
-
-                    if !col_a.collision_groups.test(col_b.collision_groups) {
-                        continue;
-                    }
-
-                    let axis =
-                        col_a.absolute_position - col_b.absolute_position;
-                    let distance = axis.length();
-                    let min_dist = col_a.radius + col_b.radius;
-
-                    if distance < min_dist {
-                        if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
-                            let n = axis / distance;
-                            let delta = min_dist - distance;
-
-                            rbd_a.position += 0.5 * delta * n;
-                            rbd_b.position -= 0.5 * delta * n;
-                        }
-
-                        // col_a.position += 0.5 * delta * n;
-                        // col_b.position -= 0.5 * delta * n;
-
-                        self.collision_send
-                            .send(CollisionEvent::Started(
-                                ColliderHandle(*idx_a),
-                                ColliderHandle(*idx_b),
-                                CollisionEventFlags::empty(),
-                            ))
-                            .unwrap();
-                    }
-                }
+            if self.use_spatial_hash {
+                self.spatial_collisions();
+            } else {
+                self.brute_force_collisions();
             }
         }
 

@@ -1,8 +1,6 @@
 use glam::Vec2;
 use std::collections::{HashMap, HashSet};
 
-use crate::RigidBodyHandle;
-
 pub type CellIndex = (i32, i32);
 pub type Id = u64;
 
