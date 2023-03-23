@@ -255,12 +255,15 @@ impl Physics {
 
         for (i, idx_a) in keys.iter().enumerate() {
             for idx_b in keys.iter().take(i) {
+                // for idx_b in keys.iter() {
+                //     if idx_a >= idx_b {
+                //         continue;
+                //     }
+
                 let (Some(col_a), Some(col_b)) = self.col_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
 
                 let Some(parent_a) = col_a.parent else { continue; };
                 let Some(parent_b) = col_b.parent else { continue; };
-
-                let (Some(rbd_a), Some(rbd_b)) = self.rbd_set.arena.get2_mut(parent_a.handle.0, parent_b.handle.0) else { continue; };
 
                 if !col_a.collision_groups.test(col_b.collision_groups) {
                     continue;
@@ -271,6 +274,8 @@ impl Physics {
                 let min_dist = col_a.radius + col_b.radius;
 
                 if distance < min_dist {
+                    let (Some(rbd_a), Some(rbd_b)) = self.rbd_set.arena.get2_mut(parent_a.handle.0, parent_b.handle.0) else { continue; };
+
                     if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
                         let n = axis / distance;
                         let delta = min_dist - distance;
@@ -301,7 +306,6 @@ impl Physics {
     pub fn spatial_collisions(&mut self) {
         let _span = tracy_client::span!("spatial_collisions");
 
-        // Iterate over all colliders
         let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
         let mut count = 0;
 
@@ -312,13 +316,15 @@ impl Physics {
 
             const MAX_COLLIDER_RADIUS: f32 = 1.0;
 
-            // Query the spatial hash for relevant rigid bodies
             let relevant_rigid_bodies = self
                 .spatial_hash
                 .query(rbd_a.position, col_a.radius + MAX_COLLIDER_RADIUS);
 
+            // for idx_b in keys.iter() {
+            //     let idx_b = *idx_b;
             for cell_point in relevant_rigid_bodies {
                 let idx_b = Index::from_bits(cell_point.id).unwrap();
+
                 if let Some(col_b) = self.col_set.arena.get(idx_b) {
                     if idx_a >= &idx_b {
                         continue;
@@ -327,10 +333,6 @@ impl Physics {
                     let parent_b = col_b.parent.unwrap();
                     // let rbd_b =
                     //     self.rbd_set.arena.get(parent_b.handle.0).unwrap();
-
-                    if !col_a.collision_groups.test(col_b.collision_groups) {
-                        continue;
-                    }
 
                     if !col_a.collision_groups.test(col_b.collision_groups) {
                         continue;
@@ -355,11 +357,11 @@ impl Physics {
                             let n = axis / distance;
                             let delta = min_dist - distance;
 
-                            count += 1;
-
                             rbd_a.position += 0.5 * delta * n;
                             rbd_b.position -= 0.5 * delta * n;
                         }
+
+                        count += 1;
 
                         self.collision_send
                             .send(CollisionEvent::Started(
@@ -371,9 +373,9 @@ impl Physics {
                     }
                 }
             }
-
-            perf_counter_inc("collisions", count);
         }
+
+        perf_counter_inc("collisions", count);
     }
 
     fn integrate(&mut self, substeps: i32, delta: f32) {
@@ -412,17 +414,17 @@ impl Physics {
                 }
             }
 
-            for (_, body) in self.rbd_set.arena.iter_mut() {
-                let obj = Vec2::ZERO;
-                let to_obj = body.position - obj;
-                let dist = to_obj.length();
-                let radius = 4.0;
-
-                if dist > (radius - body.radius) {
-                    let n = to_obj / dist;
-                    body.position = obj + n * (radius - body.radius);
-                }
-            }
+            // for (_, body) in self.rbd_set.arena.iter_mut() {
+            //     let obj = Vec2::ZERO;
+            //     let to_obj = body.position - obj;
+            //     let dist = to_obj.length();
+            //     let radius = 4.0;
+            //
+            //     if dist > (radius - body.radius) {
+            //         let n = to_obj / dist;
+            //         body.position = obj + n * (radius - body.radius);
+            //     }
+            // }
 
             {
                 let _span = tracy_client::span!("collisions");

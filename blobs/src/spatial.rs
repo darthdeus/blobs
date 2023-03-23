@@ -1,5 +1,6 @@
 use glam::Vec2;
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
 pub type CellIndex = (i32, i32);
 pub type Id = u64;
@@ -14,6 +15,14 @@ pub struct CellPoint {
 impl PartialEq for CellPoint {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
+    }
+}
+
+impl Eq for CellPoint {}
+
+impl Hash for CellPoint {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
     }
 }
 
@@ -132,6 +141,14 @@ impl SpatialHash {
             }
         }
 
+        // TODO: move this into a test
+        // let hash: HashSet<_> =
+        //     points_within_radius.clone().into_iter().collect::<HashSet<_>>();
+        //
+        // assert_eq!(hash.len(), points_within_radius.len());
+        //
+        // perf_counter("query", points_within_radius.len() as u64);
+
         points_within_radius
     }
 
@@ -156,6 +173,7 @@ impl SpatialHash {
                 }
             }
         }
+
         (points_within_radius, neighbor_cells)
     }
 }
