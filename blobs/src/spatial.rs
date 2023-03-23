@@ -100,6 +100,7 @@ impl SpatialHash {
 
     fn get_neighbor_cells(&self, cell_coords: (i32, i32)) -> Vec<(i32, i32)> {
         let (x, y) = cell_coords;
+
         vec![
             (x - 1, y - 1),
             (x - 1, y),

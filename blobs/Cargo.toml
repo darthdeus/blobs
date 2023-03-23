@@ -18,5 +18,7 @@ itertools = "0.10.5"
 assert_approx_eq = "1.1.0"
 tracy-client = "0.15.2"
 
+qute-types = { path = "../qute-types" }
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 rayon = "1.6.1"

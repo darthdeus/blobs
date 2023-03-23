@@ -8,6 +8,7 @@ pub struct Velocity(pub Vec2);
 
 use glam::*;
 pub use hecs::*;
+pub use qute_types::*;
 
 use itertools::Itertools;
 use thunderdome::{Arena, Index};
@@ -250,6 +251,8 @@ impl Physics {
 
         let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
 
+        let mut count = 0;
+
         for (i, idx_a) in keys.iter().enumerate() {
             for idx_b in keys.iter().take(i) {
                 let (Some(col_a), Some(col_b)) = self.col_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
@@ -276,6 +279,8 @@ impl Physics {
                         rbd_b.position -= 0.5 * delta * n;
                     }
 
+                    count += 1;
+
                     // col_a.position += 0.5 * delta * n;
                     // col_b.position -= 0.5 * delta * n;
 
@@ -289,6 +294,8 @@ impl Physics {
                 }
             }
         }
+
+        perf_counter_inc("collisions", count);
     }
 
     pub fn spatial_collisions(&mut self) {
@@ -296,13 +303,14 @@ impl Physics {
 
         // Iterate over all colliders
         let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
+        let mut count = 0;
 
         for (_i, idx_a) in keys.iter().enumerate() {
             let col_a = self.col_set.arena.get(*idx_a).unwrap();
             let parent_a = col_a.parent.unwrap();
             let rbd_a = self.rbd_set.arena.get(parent_a.handle.0).unwrap();
 
-            const MAX_COLLIDER_RADIUS: f32 = 10.0;
+            const MAX_COLLIDER_RADIUS: f32 = 1.0;
 
             // Query the spatial hash for relevant rigid bodies
             let relevant_rigid_bodies = self
@@ -347,26 +355,10 @@ impl Physics {
                             let n = axis / distance;
                             let delta = min_dist - distance;
 
-                            {
-                                let offset = 0.5 * delta * n;
+                            count += 1;
 
-                                self.spatial_hash.move_point(
-                                    parent_a_handle.to_bits(),
-                                    offset,
-                                );
-                                rbd_a.position += offset;
-                            }
-
-
-                            {
-                                let offset = -0.5 * delta * n;
-
-                                self.spatial_hash.move_point(
-                                    parent_b_handle.to_bits(),
-                                    offset,
-                                );
-                                rbd_b.position += offset;
-                            }
+                            rbd_a.position += 0.5 * delta * n;
+                            rbd_b.position -= 0.5 * delta * n;
                         }
 
                         self.collision_send
@@ -379,6 +371,8 @@ impl Physics {
                     }
                 }
             }
+
+            perf_counter_inc("collisions", count);
         }
     }
 
@@ -391,10 +385,14 @@ impl Physics {
             {
                 let _span = tracy_client::span!("update positions");
 
-                for (_, body) in self.rbd_set.arena.iter_mut() {
+                for (idx, body) in self.rbd_set.arena.iter_mut() {
                     if body.body_type == RigidBodyType::KinematicVelocityBased {
                         let velocity = body.position - body.position_old;
 
+                        self.spatial_hash.move_point(
+                            idx.to_bits(),
+                            body.position - body.position_old,
+                        );
                         body.position_old = body.position;
                         body.position +=
                             velocity * delta + self.gravity * delta * delta;
@@ -414,22 +412,26 @@ impl Physics {
                 }
             }
 
-            // for (_, body) in self.rbd_set.arena.iter_mut() {
-            //     let obj = Vec2::ZERO;
-            //     let to_obj = body.position - obj;
-            //     let dist = to_obj.length();
-            //     let radius = 4.0;
-            //
-            //     if dist > (radius - body.radius) {
-            //         let n = to_obj / dist;
-            //         body.position = obj + n * (radius - body.radius);
-            //     }
-            // }
+            for (_, body) in self.rbd_set.arena.iter_mut() {
+                let obj = Vec2::ZERO;
+                let to_obj = body.position - obj;
+                let dist = to_obj.length();
+                let radius = 4.0;
 
-            if self.use_spatial_hash {
-                self.spatial_collisions();
-            } else {
-                self.brute_force_collisions();
+                if dist > (radius - body.radius) {
+                    let n = to_obj / dist;
+                    body.position = obj + n * (radius - body.radius);
+                }
+            }
+
+            {
+                let _span = tracy_client::span!("collisions");
+
+                if self.use_spatial_hash {
+                    self.spatial_collisions();
+                } else {
+                    self.brute_force_collisions();
+                }
             }
         }
 
