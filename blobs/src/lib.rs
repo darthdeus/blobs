@@ -137,6 +137,12 @@ impl QueryPipeline {
     }
 }
 
+// Circle constraint
+pub struct Constraint {
+    pub position: Vec2,
+    pub radius: f32,
+}
+
 pub struct Physics {
     pub gravity: Vec2,
 
@@ -145,6 +151,7 @@ pub struct Physics {
     pub query_pipeline: QueryPipeline,
 
     pub spatial_hash: SpatialHash,
+    pub constraints: Vec<Constraint>,
 
     pub use_spatial_hash: bool,
 
@@ -167,6 +174,7 @@ impl Physics {
             query_pipeline: QueryPipeline::new(),
 
             use_spatial_hash: false,
+            constraints: vec![],
 
             collision_send: send,
             collision_recv: recv,
@@ -414,17 +422,20 @@ impl Physics {
                 }
             }
 
-            // for (_, body) in self.rbd_set.arena.iter_mut() {
-            //     let obj = Vec2::ZERO;
-            //     let to_obj = body.position - obj;
-            //     let dist = to_obj.length();
-            //     let radius = 4.0;
-            //
-            //     if dist > (radius - body.radius) {
-            //         let n = to_obj / dist;
-            //         body.position = obj + n * (radius - body.radius);
-            //     }
-            // }
+            for constraint in self.constraints.iter() {
+                for (_, body) in self.rbd_set.arena.iter_mut() {
+                    let obj = constraint.position;
+                    let radius = constraint.radius;
+
+                    let to_obj = body.position - obj;
+                    let dist = to_obj.length();
+
+                    if dist > (radius - body.radius) {
+                        let n = to_obj / dist;
+                        body.position = obj + n * (radius - body.radius);
+                    }
+                }
+            }
 
             {
                 let _span = span!("collisions");
