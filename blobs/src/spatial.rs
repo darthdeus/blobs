@@ -43,7 +43,7 @@ impl SpatialHash {
         }
     }
 
-    fn get_cell_coords(&self, position: Vec2) -> (i32, i32) {
+    pub fn get_cell_coords(&self, position: Vec2) -> (i32, i32) {
         (
             (position.x / self.cell_size).floor() as i32,
             (position.y / self.cell_size).floor() as i32,
