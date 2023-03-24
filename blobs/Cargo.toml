@@ -1,6 +1,6 @@
 [package]
 name = "blobs"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
 license = "MIT"
 description = "NOT-Soft body physics in 2D"
@@ -9,6 +9,7 @@ description = "NOT-Soft body physics in 2D"
 default = []
 # default = ["use-grid"]
 use-grid = []
+tracy = []
 
 [dependencies]
 glam = "0.23.0"
@@ -19,7 +20,7 @@ log = "0.4.17"
 
 itertools = "0.10.5"
 assert_approx_eq = "1.1.0"
-tracy-client = "0.15.2"
+tracy-client = { version = "0.15.2", optional = true }
 
 grids = "0.1.3"
 
