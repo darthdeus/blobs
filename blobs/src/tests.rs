@@ -1,8 +1,16 @@
+// TODO: move this into a test
+// let hash: HashSet<_> =
+//     points_within_radius.clone().into_iter().collect::<HashSet<_>>();
+//
+// assert_eq!(hash.len(), points_within_radius.len());
+//
+// perf_counter("query", points_within_radius.len() as u64);
+
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use glam::vec2;
     use assert_approx_eq::assert_approx_eq;
+    use glam::vec2;
 
     // A helper function that creates a spatial hash with some points
     fn create_spatial_hash() -> SpatialHash {
@@ -65,7 +73,9 @@ mod tests {
 
         let results = hash.query(Vec2::new(1.0, 1.0), 1.5);
         assert_eq!(results.len(), 1);
-        assert!(results.iter().any(|point| point.id == p && point.position == Vec2::new(2.0, 2.0)));
+        assert!(results.iter().any(|point| {
+            point.id == p && point.position == Vec2::new(2.0, 2.0)
+        }));
     }
 
     #[test]
