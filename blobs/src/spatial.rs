@@ -1,4 +1,6 @@
 use glam::Vec2;
+#[cfg(feature = "use-grid")]
+use grids::Grid;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
@@ -30,7 +32,10 @@ pub struct SpatialHash {
     pub cell_size: f32,
     pub next_id: u64,
     pub points: HashMap<u64, CellPoint>,
+    #[cfg(not(feature = "use-grid"))]
     pub grid: HashMap<(i32, i32), HashSet<u64>>,
+    #[cfg(feature = "use-grid")]
+    pub grid: Grid<HashSet<u64>>,
 
     pub query_results: Vec<CellPoint>,
 }
@@ -41,7 +46,10 @@ impl SpatialHash {
             cell_size,
             next_id: 0,
             points: HashMap::new(),
+            #[cfg(not(feature = "use-grid"))]
             grid: HashMap::new(),
+            #[cfg(feature = "use-grid")]
+            grid: Grid::new(50, 50, HashSet::new()),
             query_results: Vec::new(),
         }
     }
@@ -64,6 +72,9 @@ impl SpatialHash {
         let point = CellPoint { id, position, radius };
         let cell_coords = self.get_cell_coords(point.position);
 
+        #[cfg(feature = "use-grid")]
+        self.grid[cell_coords].insert(point.id);
+        #[cfg(not(feature = "use-grid"))]
         self.grid
             .entry(cell_coords)
             .or_insert_with(HashSet::new)
@@ -74,6 +85,11 @@ impl SpatialHash {
     pub fn remove(&mut self, id: u64) -> Option<CellPoint> {
         if let Some(point) = self.points.remove(&id) {
             let cell_coords = self.get_cell_coords(point.position);
+
+            #[cfg(feature = "use-grid")]
+            self.grid[cell_coords].remove(&id);
+
+            #[cfg(not(feature = "use-grid"))]
             if let Some(cell) = self.grid.get_mut(&cell_coords) {
                 cell.remove(&id);
             }
@@ -92,13 +108,23 @@ impl SpatialHash {
             let new_cell_coords = self.get_cell_coords(new_position);
 
             if old_cell_coords != new_cell_coords {
-                if let Some(cell) = self.grid.get_mut(&old_cell_coords) {
-                    cell.remove(&id);
+                #[cfg(feature = "use-grid")]
+                {
+                    self.grid[old_cell_coords].remove(&id);
+                    self.grid[new_cell_coords].insert(id);
                 }
-                self.grid
-                    .entry(new_cell_coords)
-                    .or_insert_with(HashSet::new)
-                    .insert(id);
+
+                #[cfg(not(feature = "use-grid"))]
+                {
+                    if let Some(cell) = self.grid.get_mut(&old_cell_coords) {
+                        cell.remove(&id);
+                    }
+
+                    self.grid
+                        .entry(new_cell_coords)
+                        .or_insert_with(HashSet::new)
+                        .insert(id);
+                }
             }
 
             if let Some(point) = self.points.get_mut(&id) {
@@ -137,6 +163,20 @@ impl SpatialHash {
         self.query_results.clear();
 
         for cell_coords in neighbor_cells {
+            #[cfg(feature = "use-grid")]
+            {
+                for point_id in self.grid[cell_coords].iter() {
+                    let point = self.points.get(&point_id).unwrap();
+                    let dist = query_radius + point.radius;
+
+                    if (point.position - position).length_squared() <=
+                        dist * dist
+                    {
+                        self.query_results.push(point.clone());
+                    }
+                }
+            }
+            #[cfg(not(feature = "use-grid"))]
             if let Some(cell) = self.grid.get(&cell_coords) {
                 for point_id in cell {
                     let point = self.points.get(point_id).unwrap();
