@@ -19,11 +19,14 @@ fn spatial_hash_benchmark(c: &mut Criterion) {
         points.push((id, position));
     }
 
-    let query_position = Vec2::new(0.0, 0.0);
+    let points = black_box(points);
+    let query_position = black_box(Vec2::new(0.0, 0.0));
     let query_radius = black_box(50.0);
 
     c.bench_function("query", |b| {
-        b.iter(|| spatial_hash.query(query_position, query_radius))
+        b.iter(|| {
+            let _ = spatial_hash.query(query_position, query_radius);
+        })
     });
 
     let move_offset = Vec2::new(10.0, 10.0);

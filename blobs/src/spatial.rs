@@ -31,6 +31,8 @@ pub struct SpatialHash {
     pub next_id: u64,
     pub points: HashMap<u64, CellPoint>,
     pub grid: HashMap<(i32, i32), HashSet<u64>>,
+
+    pub query_results: Vec<CellPoint>,
 }
 
 impl SpatialHash {
@@ -40,6 +42,7 @@ impl SpatialHash {
             next_id: 0,
             points: HashMap::new(),
             grid: HashMap::new(),
+            query_results: Vec::new(),
         }
     }
 
@@ -107,10 +110,10 @@ impl SpatialHash {
         }
     }
 
-    fn get_neighbor_cells(&self, cell_coords: (i32, i32)) -> Vec<(i32, i32)> {
+    fn get_neighbor_cells(&self, cell_coords: (i32, i32)) -> [(i32, i32); 9] {
         let (x, y) = cell_coords;
 
-        vec![
+        [
             (x - 1, y - 1),
             (x - 1, y),
             (x - 1, y + 1),
@@ -123,19 +126,26 @@ impl SpatialHash {
         ]
     }
 
-    pub fn query(&self, position: Vec2, query_radius: f32) -> Vec<CellPoint> {
+    pub fn query(
+        &mut self,
+        position: Vec2,
+        query_radius: f32,
+    ) -> &Vec<CellPoint> {
         let cell_coords = self.get_cell_coords(position);
         let neighbor_cells = self.get_neighbor_cells(cell_coords);
 
-        let mut points_within_radius = Vec::new();
-        for cell_coords in &neighbor_cells {
-            if let Some(cell) = self.grid.get(cell_coords) {
+        self.query_results.clear();
+
+        for cell_coords in neighbor_cells {
+            if let Some(cell) = self.grid.get(&cell_coords) {
                 for point_id in cell {
                     let point = self.points.get(point_id).unwrap();
-                    if (point.position - position).length() - point.radius <=
-                        query_radius
+                    let dist = query_radius + point.radius;
+
+                    if (point.position - position).length_squared() <=
+                        dist * dist
                     {
-                        points_within_radius.push(point.clone());
+                        self.query_results.push(point.clone());
                     }
                 }
             }
@@ -149,31 +159,31 @@ impl SpatialHash {
         //
         // perf_counter("query", points_within_radius.len() as u64);
 
-        points_within_radius
+        &self.query_results
     }
 
-    pub fn query_with_cells(
-        &self,
-        position: Vec2,
-        query_radius: f32,
-    ) -> (Vec<CellPoint>, Vec<(i32, i32)>) {
-        let cell_coords = self.get_cell_coords(position);
-        let neighbor_cells = self.get_neighbor_cells(cell_coords);
-
-        let mut points_within_radius = Vec::new();
-        for cell_coords in &neighbor_cells {
-            if let Some(cell) = self.grid.get(cell_coords) {
-                for point_id in cell {
-                    let point = self.points.get(point_id).unwrap();
-                    if (point.position - position).length() - point.radius <=
-                        query_radius
-                    {
-                        points_within_radius.push(point.clone());
-                    }
-                }
-            }
-        }
-
-        (points_within_radius, neighbor_cells)
-    }
+    // pub fn query_with_cells(
+    //     &self,
+    //     position: Vec2,
+    //     query_radius: f32,
+    // ) -> (Vec<CellPoint>, Vec<(i32, i32)>) {
+    //     let cell_coords = self.get_cell_coords(position);
+    //     let neighbor_cells = self.get_neighbor_cells(cell_coords);
+    //
+    //     let mut points_within_radius = Vec::new();
+    //     for cell_coords in &neighbor_cells {
+    //         if let Some(cell) = self.grid.get(cell_coords) {
+    //             for point_id in cell {
+    //                 let point = self.points.get(point_id).unwrap();
+    //                 if (point.position - position).length() - point.radius <=
+    //                     query_radius
+    //                 {
+    //                     points_within_radius.push(point.clone());
+    //                 }
+    //             }
+    //         }
+    //     }
+    //
+    //     (points_within_radius, neighbor_cells)
+    // }
 }

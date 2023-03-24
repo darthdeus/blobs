@@ -314,7 +314,7 @@ impl Physics {
             let parent_a = col_a.parent.unwrap();
             let rbd_a = self.rbd_set.arena.get(parent_a.handle.0).unwrap();
 
-            const MAX_COLLIDER_RADIUS: f32 = 0.3;
+            const MAX_COLLIDER_RADIUS: f32 = 1.0;
 
             let relevant_rigid_bodies = self
                 .spatial_hash
