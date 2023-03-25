@@ -40,7 +40,7 @@ impl RigidBody {
         self.velocity_request = Some(velocity);
     }
 
-    pub fn get_velocity(&mut self) -> Vec2 {
+    pub fn get_velocity(&self) -> Vec2 {
         self.calculated_velocity
     }
 
