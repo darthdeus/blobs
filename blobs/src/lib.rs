@@ -390,19 +390,21 @@ impl Physics {
         let _span = span!("update positions");
 
         for (idx, body) in self.rbd_set.arena.iter_mut() {
-            if body.body_type == RigidBodyType::KinematicVelocityBased {
-                // body.set_velocity(body.velocity, delta);
-
-                let velocity = body.position - body.position_old;
-
-                self.spatial_hash.move_point(
-                    idx.to_bits(),
-                    body.position - body.position_old,
-                );
-                body.position_old = body.position;
-                body.position +=
-                    velocity * delta + self.gravity * delta * delta;
+            if let Some(req_velocity) = body.velocity_request.take() {
+                body.position_old = body.position - req_velocity * delta;
             }
+
+            let displacement = body.position - body.position_old;
+
+            self.spatial_hash
+                .move_point(idx.to_bits(), body.position - body.position_old);
+
+            body.position_old = body.position;
+            body.position += displacement + body.acceleration * delta * delta;
+
+            body.acceleration = Vec2::ZERO;
+
+            body.calculated_velocity = displacement / delta;
         }
 
 
@@ -441,17 +443,13 @@ impl Physics {
 
             self.apply_constraints();
 
-            self.update_objects(step_delta);
-
-            {
-                let _span = span!("collisions");
-
-                if self.use_spatial_hash {
-                    self.spatial_collisions();
-                } else {
-                    self.brute_force_collisions();
-                }
+            if self.use_spatial_hash {
+                self.spatial_collisions();
+            } else {
+                self.brute_force_collisions();
             }
+
+            self.update_objects(step_delta);
         }
 
         // for (_, obj_a) in self.rbd_set.arena.iter_mut() {

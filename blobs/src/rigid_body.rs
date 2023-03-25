@@ -35,7 +35,6 @@ impl RigidBody {
         self.position
     }
 
-    // self.position_old = self.position - velocity * delta;
     pub fn set_velocity(&mut self, velocity: Vec2) {
         self.velocity_request = Some(velocity);
     }
