@@ -386,56 +386,62 @@ impl Physics {
         perf_counter_inc("collisions", count);
     }
 
+    fn update_objects(&mut self, delta: f32) {
+        let _span = span!("update positions");
+
+        for (idx, body) in self.rbd_set.arena.iter_mut() {
+            if body.body_type == RigidBodyType::KinematicVelocityBased {
+                // body.set_velocity(body.velocity, delta);
+
+                let velocity = body.position - body.position_old;
+
+                self.spatial_hash.move_point(
+                    idx.to_bits(),
+                    body.position - body.position_old,
+                );
+                body.position_old = body.position;
+                body.position +=
+                    velocity * delta + self.gravity * delta * delta;
+            }
+        }
+
+
+        for (_, body) in self.rbd_set.arena.iter_mut() {
+            for col_handle in body.colliders() {
+                if let Some(collider) = self.col_set.get_mut(*col_handle) {
+                    collider.absolute_position =
+                        body.position + collider.offset;
+                }
+            }
+        }
+    }
+
+    fn apply_constraints(&mut self) {
+        for constraint in self.constraints.iter() {
+            for (_, body) in self.rbd_set.arena.iter_mut() {
+                let obj = constraint.position;
+                let radius = constraint.radius;
+
+                let to_obj = body.position - obj;
+                let dist = to_obj.length();
+
+                if dist > (radius - body.radius) {
+                    let n = to_obj / dist;
+                    body.position = obj + n * (radius - body.radius);
+                }
+            }
+        }
+    }
+
     fn integrate(&mut self, substeps: i32, delta: f32) {
-        let delta = delta / substeps as f32;
+        let step_delta = delta / substeps as f32;
 
         for _ in 0..substeps {
             let _span = span!("substep");
 
-            {
-                let _span = span!("update positions");
+            self.apply_constraints();
 
-                for (idx, body) in self.rbd_set.arena.iter_mut() {
-                    if body.body_type == RigidBodyType::KinematicVelocityBased {
-                        let velocity = body.position - body.position_old;
-
-                        self.spatial_hash.move_point(
-                            idx.to_bits(),
-                            body.position - body.position_old,
-                        );
-                        body.position_old = body.position;
-                        body.position +=
-                            velocity * delta + self.gravity * delta * delta;
-                    }
-                }
-
-
-                for (_, body) in self.rbd_set.arena.iter_mut() {
-                    for col_handle in body.colliders() {
-                        if let Some(collider) =
-                            self.col_set.get_mut(*col_handle)
-                        {
-                            collider.absolute_position =
-                                body.position + collider.offset;
-                        }
-                    }
-                }
-            }
-
-            for constraint in self.constraints.iter() {
-                for (_, body) in self.rbd_set.arena.iter_mut() {
-                    let obj = constraint.position;
-                    let radius = constraint.radius;
-
-                    let to_obj = body.position - obj;
-                    let dist = to_obj.length();
-
-                    if dist > (radius - body.radius) {
-                        let n = to_obj / dist;
-                        body.position = obj + n * (radius - body.radius);
-                    }
-                }
-            }
+            self.update_objects(step_delta);
 
             {
                 let _span = span!("collisions");

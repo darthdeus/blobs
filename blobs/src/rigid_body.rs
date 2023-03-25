@@ -17,11 +17,10 @@ pub struct RigidBody {
     pub scale: Vec2,
 
     pub acceleration: Vec2,
-    pub velocity: Vec2,
-
-    pub angular_velocity: f32,
-
     pub radius: f32,
+
+    pub velocity_request: Option<Vec2>,
+    pub calculated_velocity: Vec2,
 
     pub colliders: Vec<ColliderHandle>,
 
@@ -36,12 +35,13 @@ impl RigidBody {
         self.position
     }
 
-    pub fn linvel(&self) -> &Vec2 {
-        &self.velocity
+    // self.position_old = self.position - velocity * delta;
+    pub fn set_velocity(&mut self, velocity: Vec2) {
+        self.velocity_request = Some(velocity);
     }
 
-    pub fn set_linvel(&mut self, velocity: Vec2, _wakeup: bool) {
-        self.velocity = velocity;
+    pub fn get_velocity(&mut self) -> Vec2 {
+        self.calculated_velocity
     }
 
     pub fn colliders(&self) -> impl Iterator<Item = &ColliderHandle> {
@@ -57,8 +57,8 @@ impl RigidBody {
     }
 
     pub fn is_kinematic(&self) -> bool {
-        self.body_type == RigidBodyType::KinematicPositionBased
-            || self.body_type == RigidBodyType::KinematicVelocityBased
+        self.body_type == RigidBodyType::KinematicPositionBased ||
+            self.body_type == RigidBodyType::KinematicVelocityBased
     }
 
     pub fn is_fixed(&self) -> bool {
