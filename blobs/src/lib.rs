@@ -692,3 +692,15 @@ impl From<Group> for u32 {
         val.bits()
     }
 }
+
+pub fn get_collider_parent(
+    physics: &Physics,
+    col_handle: ColliderHandle,
+) -> Option<(&Collider, RigidBodyHandle, &RigidBody, Entity)> {
+    let col = physics.col_set.get(col_handle)?;
+    let rbd_handle = col.parent()?;
+    let rbd = physics.get_rbd(rbd_handle)?;
+    let entity = Entity::from_bits(rbd.user_data as u64)?;
+
+    Some((col, rbd_handle, rbd, entity))
+}
