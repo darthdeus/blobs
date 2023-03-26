@@ -185,7 +185,15 @@ impl Physics {
         }
     }
 
-    pub fn step(&mut self, substeps: i32, frame_time: f64) {
+    pub fn step(&mut self, substeps: i32, delta: f64) {
+        let _span = span!("step");
+        let _span = span!("integrate");
+        self.integrate(substeps, delta as f32);
+        self.time += delta;
+    }
+
+
+    pub fn fixed_step(&mut self, substeps: i32, frame_time: f64) {
         let _span = span!("step");
         self.accumulator += frame_time;
 
