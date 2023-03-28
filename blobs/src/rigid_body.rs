@@ -65,8 +65,10 @@ impl RigidBody {
     }
 }
 
+// TODO: Check how kinematic velocity and position based is implemented
+// https://github.com/dimforge/bevy_rapier/blob/8dbc80d035b102a208de436a629fdc3b57a5224b/src/dynamics/rigid_body.rs
+// TODO: does rapier use verlet?
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-
 /// The status of a body, governing the way it is affected by external forces.
 pub enum RigidBodyType {
     /// A `RigidBodyType::Dynamic` body can be affected by all external forces.
