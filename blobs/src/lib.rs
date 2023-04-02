@@ -163,7 +163,7 @@ pub struct Physics {
 }
 
 impl Physics {
-    pub fn new(gravity: Vec2) -> Self {
+    pub fn new(gravity: Vec2, use_spatial_hash: bool) -> Self {
         let (send, recv) = std::sync::mpsc::channel();
 
         Self {
@@ -173,7 +173,7 @@ impl Physics {
             col_set: ColliderSet::new(),
             query_pipeline: QueryPipeline::new(),
 
-            use_spatial_hash: false,
+            use_spatial_hash,
             constraints: vec![],
 
             collision_send: send,
