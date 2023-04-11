@@ -68,7 +68,6 @@ pub enum CollisionEvent {
 
 bitflags::bitflags! {
     /// Flags providing more information regarding a collision event.
-    #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
     pub struct CollisionEventFlags: u32 {
         /// Flag set if at least one of the colliders involved in the
         /// collision was a sensor when the event was fired.
