@@ -295,8 +295,10 @@ impl Physics {
                         let n = axis / distance;
                         let delta = min_dist - distance;
 
-                        rbd_a.position += 0.5 * delta * n;
-                        rbd_b.position -= 0.5 * delta * n;
+                        let ratio = Self::mass_ratio(rbd_a, rbd_b);
+
+                        rbd_a.position += ratio * delta * n;
+                        rbd_b.position -= (1.0 - ratio) * delta * n;
                     }
 
                     count += 1;
@@ -372,8 +374,10 @@ impl Physics {
                             let n = axis / distance;
                             let delta = min_dist - distance;
 
-                            rbd_a.position += 0.5 * delta * n;
-                            rbd_b.position -= 0.5 * delta * n;
+                            let ratio = Self::mass_ratio(rbd_a, rbd_b);
+
+                            rbd_a.position += ratio * delta * n;
+                            rbd_b.position -= (1.0 - ratio) * delta * n;
                         }
 
                         count += 1;
@@ -391,6 +395,10 @@ impl Physics {
         }
 
         perf_counter_inc("collisions", count);
+    }
+
+    fn mass_ratio(a: &RigidBody, b: &RigidBody) -> f32 {
+        1.0 - a.mass / (a.mass + b.mass)
     }
 
     fn update_objects(&mut self, delta: f32) {

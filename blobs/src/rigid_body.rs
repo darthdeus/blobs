@@ -13,6 +13,8 @@ pub struct RigidBody {
     pub position: Vec2,
     pub position_old: Vec2,
 
+    pub mass: f32,
+
     pub rotation: f32,
     pub scale: Vec2,
 
