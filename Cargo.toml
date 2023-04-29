@@ -2,7 +2,8 @@
 resolver = "2"
 
 members = [
-  "blobs"
+  "blobs",
+  "demo"
 ]
 
 [profile.dev.package."*"]

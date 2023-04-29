@@ -9,10 +9,10 @@ pub struct Velocity(pub Vec2);
 mod perf_counters;
 pub use crate::perf_counters::*;
 
-pub use std::borrow::Cow;
 pub use atomic_refcell::{AtomicRef, AtomicRefCell};
-pub use std::collections::HashMap;
 pub use once_cell::sync::Lazy;
+pub use std::borrow::Cow;
+pub use std::collections::HashMap;
 
 use glam::*;
 pub use hecs::*;
