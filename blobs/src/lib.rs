@@ -6,9 +6,16 @@ use std::{
 #[derive(Copy, Clone, Debug)]
 pub struct Velocity(pub Vec2);
 
+mod perf_counters;
+pub use crate::perf_counters::*;
+
+pub use std::borrow::Cow;
+pub use atomic_refcell::{AtomicRef, AtomicRefCell};
+pub use std::collections::HashMap;
+pub use once_cell::sync::Lazy;
+
 use glam::*;
 pub use hecs::*;
-pub use qute_types::*;
 
 use itertools::Itertools;
 use thunderdome::{Arena, Index};
@@ -24,10 +31,7 @@ pub use query_filter::*;
 pub use rigid_body::*;
 pub use spatial::*;
 
-pub fn groups(
-    memberships: impl Into<Group>,
-    filter: impl Into<Group>,
-) -> InteractionGroups {
+pub fn groups(memberships: impl Into<Group>, filter: impl Into<Group>) -> InteractionGroups {
     InteractionGroups::new(memberships.into(), filter.into())
 }
 
@@ -191,7 +195,6 @@ impl Physics {
         self.time += delta;
     }
 
-
     pub fn fixed_step(&mut self, substeps: i32, frame_time: f64) {
         let _span = span!("step");
         self.accumulator += frame_time;
@@ -213,10 +216,7 @@ impl Physics {
         self.rbd_set.get(handle)
     }
 
-    pub fn get_mut_rbd(
-        &mut self,
-        handle: RigidBodyHandle,
-    ) -> Option<&mut RigidBody> {
+    pub fn get_mut_rbd(&mut self, handle: RigidBodyHandle) -> Option<&mut RigidBody> {
         self.rbd_set.get_mut(handle)
     }
 
@@ -229,7 +229,8 @@ impl Physics {
         let radius = rbd.radius;
 
         let handle = self.rbd_set.insert(rbd);
-        self.spatial_hash.insert_with_id(handle.0.to_bits(), position, radius);
+        self.spatial_hash
+            .insert_with_id(handle.0.to_bits(), position, radius);
         handle
     }
 
@@ -238,7 +239,8 @@ impl Physics {
         collider: Collider,
         rbd_handle: RigidBodyHandle,
     ) -> ColliderHandle {
-        self.col_set.insert_with_parent(collider, rbd_handle, &mut self.rbd_set)
+        self.col_set
+            .insert_with_parent(collider, rbd_handle, &mut self.rbd_set)
     }
 
     pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
@@ -253,8 +255,9 @@ impl Physics {
     }
 
     pub fn update_rigid_body_position(&mut self, id: u64, offset: Vec2) {
-        if let Some(rigid_body) =
-            self.rbd_set.get_mut(RigidBodyHandle(Index::from_bits(id).unwrap()))
+        if let Some(rigid_body) = self
+            .rbd_set
+            .get_mut(RigidBodyHandle(Index::from_bits(id).unwrap()))
         {
             self.spatial_hash.move_point(id, offset);
             rigid_body.position += offset;
@@ -355,8 +358,7 @@ impl Physics {
                         continue;
                     }
 
-                    let axis =
-                        col_a.absolute_position - col_b.absolute_position;
+                    let axis = col_a.absolute_position - col_b.absolute_position;
                     let distance = axis.length();
                     let min_dist = col_a.radius + col_b.radius;
 
@@ -422,12 +424,10 @@ impl Physics {
             body.calculated_velocity = displacement / delta;
         }
 
-
         for (_, body) in self.rbd_set.arena.iter_mut() {
             for col_handle in body.colliders() {
                 if let Some(collider) = self.col_set.get_mut(*col_handle) {
-                    collider.absolute_position =
-                        body.position + collider.offset;
+                    collider.absolute_position = body.position + collider.offset;
                 }
             }
         }
@@ -514,7 +514,10 @@ pub struct InteractionGroups {
 impl InteractionGroups {
     /// Initializes with the given interaction groups and interaction mask.
     pub const fn new(memberships: Group, filter: Group) -> Self {
-        Self { memberships, filter }
+        Self {
+            memberships,
+            filter,
+        }
     }
 
     /// Allow interaction with everything.
@@ -549,8 +552,8 @@ impl InteractionGroups {
     pub const fn test(self, rhs: Self) -> bool {
         // NOTE: since const ops is not stable, we have to convert `Group` into
         // u32 to use & operator in const context.
-        (self.memberships.bits() & rhs.filter.bits()) != 0 &&
-            (rhs.memberships.bits() & self.filter.bits()) != 0
+        (self.memberships.bits() & rhs.filter.bits()) != 0
+            && (rhs.memberships.bits() & self.filter.bits()) != 0
     }
 }
 
@@ -566,17 +569,16 @@ pub struct RigidBodySet {
 
 impl RigidBodySet {
     pub fn new() -> Self {
-        Self { arena: Arena::new() }
+        Self {
+            arena: Arena::new(),
+        }
     }
 
     pub fn get(&self, handle: RigidBodyHandle) -> Option<&RigidBody> {
         self.arena.get(handle.0)
     }
 
-    pub fn get_mut(
-        &mut self,
-        handle: RigidBodyHandle,
-    ) -> Option<&mut RigidBody> {
+    pub fn get_mut(&mut self, handle: RigidBodyHandle) -> Option<&mut RigidBody> {
         self.arena.get_mut(handle.0)
     }
 
@@ -604,7 +606,9 @@ pub struct ColliderSet {
 
 impl ColliderSet {
     pub fn new() -> Self {
-        Self { arena: Arena::new() }
+        Self {
+            arena: Arena::new(),
+        }
     }
 
     pub fn get(&self, handle: ColliderHandle) -> Option<&Collider> {
@@ -710,4 +714,20 @@ pub fn get_collider_parent(
     let entity = Entity::from_bits(rbd.user_data as u64)?;
 
     Some((col, rbd_handle, rbd, entity))
+}
+
+#[cfg(feature = "tracy")]
+#[macro_export]
+macro_rules! span {
+    ($name: expr) => {
+        Some(tracy_client::span!($name, 0))
+    };
+}
+
+#[cfg(not(feature = "tracy"))]
+#[macro_export]
+macro_rules! span {
+    ($name: expr) => {
+        None::<()>
+    };
 }

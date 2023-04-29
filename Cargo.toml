@@ -1,0 +1,9 @@
+[workspace]
+resolver = "2"
+
+members = [
+  "blobs"
+]
+
+[profile.dev.package."*"]
+opt-level = 1
