@@ -1,0 +1,41 @@
+name: Build WASM
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+
+    - name: Cache rust modules
+      uses: Swatinem/rust-cache@v2.0.1
+      with:
+        cache-on-failure: true
+        shared-key: wasm
+
+    - name: Build with cargo
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --bin demo --target wasm32-unknown-unknown --release
+
+    - name: Prepare public folder
+      run: |
+        mkdir public
+        cp target/wasm32-unknown-unknown/release/demo.wasm public/
+        cp index.html public/
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./public
