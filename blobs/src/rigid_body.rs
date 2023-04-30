@@ -62,6 +62,10 @@ impl RigidBody {
             || self.body_type == RigidBodyType::KinematicVelocityBased
     }
 
+    pub fn accelerate(&mut self, a: Vec2) {
+        self.acceleration += a;
+    }
+
     pub fn is_fixed(&self) -> bool {
         self.body_type == RigidBodyType::Fixed
     }

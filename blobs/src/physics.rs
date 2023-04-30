@@ -44,7 +44,6 @@ impl Physics {
 
     pub fn step(&mut self, substeps: i32, delta: f64) {
         let _span = span!("step");
-        let _span = span!("integrate");
         self.integrate(substeps, delta as f32);
         self.time += delta;
     }
@@ -159,9 +158,6 @@ impl Physics {
                     }
 
                     count += 1;
-
-                    // col_a.position += 0.5 * delta * n;
-                    // col_b.position -= 0.5 * delta * n;
 
                     self.collision_send
                         .send(CollisionEvent::Started(
@@ -287,6 +283,12 @@ impl Physics {
         }
     }
 
+    fn apply_gravity(&mut self) {
+        for (_, body) in self.rbd_set.arena.iter_mut() {
+            body.accelerate(self.gravity);
+        }
+    }
+
     fn apply_constraints(&mut self) {
         for constraint in self.constraints.iter() {
             for (_, body) in self.rbd_set.arena.iter_mut() {
@@ -305,12 +307,13 @@ impl Physics {
     }
 
     fn integrate(&mut self, substeps: i32, delta: f32) {
+        let _span = span!("integrate");
         let step_delta = delta / substeps as f32;
 
         for _ in 0..substeps {
             let _span = span!("substep");
 
-            self.apply_constraints();
+            self.apply_gravity();
 
             if self.use_spatial_hash {
                 self.spatial_collisions();
@@ -318,6 +321,7 @@ impl Physics {
                 self.brute_force_collisions();
             }
 
+            self.apply_constraints();
             self.update_objects(step_delta);
         }
 
