@@ -10,12 +10,16 @@ use macroquad::{
     },
     rand::gen_range,
     shapes::draw_poly,
-    time::get_frame_time,
+    time::{get_fps, get_frame_time},
     window::{clear_background, next_frame, screen_height, screen_width, Conf},
 };
 
 mod utils;
 use crate::utils::*;
+
+#[cfg(feature = "jemalloc")]
+#[global_allocator]
+static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 fn draw_circle(position: Vec2, radius: f32, color: Color) {
     // macroquad::shapes::draw_circle(position.x, position.y, radius, color);
@@ -301,11 +305,74 @@ async fn main() {
 
         egui_macroquad::ui(|ctx| {
             ctx.set_pixels_per_point(1.5);
-            egui::Window::new("Stats").show(ctx, |ui| {
-                for (name, counter) in perf_counters::PerfCounters::global().counters.iter() {
-                    ui.label(format!("{:<15}: {:<15.0}", name, counter.decayed_average,));
-                }
-            });
+
+            egui::Window::new("Performance")
+                .anchor(egui::Align2::RIGHT_BOTTOM, egui::vec2(0.0, 0.0))
+                .default_width(250.0)
+                .show(ctx, |ui| {
+                    ui.label(format!("FPS: {}", get_fps()));
+
+                    // ui.separator();
+                    // if let Some(game_loop) = c.game_loop {
+                    //     game_loop.lock().performance_metrics(&mut c.world, ui);
+                    // }
+
+                    ui.separator();
+
+                    if physics.rbd_count() > 0 {
+                        ui.label(format!("Rigid Bodies: {}", physics.rbd_count()));
+                        ui.label(format!("Colliders: {}", physics.col_set.len()));
+
+                        ui.separator();
+                    }
+
+                    // Display performance counters
+                    ui.label("Perf Counters");
+                    for (counter_name, counter) in
+                        perf_counters::PerfCounters::global().counters.iter()
+                    {
+                        ui.label(format!(
+                            "{:<15}: {:<15.0}",
+                            counter_name, counter.decayed_average,
+                        ));
+                    }
+                    ui.separator();
+
+                    // #[cfg(not(target_arch = "wasm32"))]
+                    // {
+                    //     let _span = tracy_span!("memory_stats");
+                    //
+                    //     if let Some(usage) = memory_stats::memory_stats() {
+                    //         ui.label(format!(
+                    //             "Physical Mem: {} MB",
+                    //             usage.physical_mem / (1024 * 1024)
+                    //         ));
+                    //         ui.label(format!(
+                    //             "Virtual Mem: {} MB",
+                    //             usage.virtual_mem / (1024 * 1024)
+                    //         ));
+                    //     } else {
+                    //         ui.label(format!(
+                    //             "Couldn't get the current memory usage :("
+                    //         ));
+                    //     }
+                    // }
+
+                    #[cfg(feature = "jemalloc")]
+                    {
+                        let _span = tracy_span!("jemalloc stats");
+                        ui.separator();
+
+                        ui.label("jemalloc");
+
+                        jemalloc_ctl::epoch::advance().unwrap();
+
+                        let allocated = jemalloc_ctl::stats::allocated::read().unwrap();
+                        let resident = jemalloc_ctl::stats::resident::read().unwrap();
+                        ui.label(format!("{} MB allocated", allocated / (1024 * 1024)));
+                        ui.label(format!("{} MB resident", resident / (1024 * 1024)));
+                    }
+                });
         });
 
         egui_macroquad::draw();
