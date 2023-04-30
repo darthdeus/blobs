@@ -13,7 +13,10 @@ glam = "0.23.0"
 egui-macroquad = "0.15.0"
 egui = "0.21.0"
 
+rapier2d = "0.17.2"
+
 blobs = { path = "../blobs" }
 
 jemalloc-ctl = { version = "0.5.0", optional = true }
 jemallocator = { version = "0.5.0", optional = true }
+thunderdome = "0.6.0"
