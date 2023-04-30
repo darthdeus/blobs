@@ -90,17 +90,6 @@ impl Rotation {
     }
 }
 
-pub struct Aabb {
-    pub mins: Vec2,
-    pub maxs: Vec2,
-}
-
-impl Aabb {
-    pub fn extents(&self) -> Vec2 {
-        todo!()
-    }
-}
-
 pub struct Cuboid {
     pub half_extents: Vec2,
 }

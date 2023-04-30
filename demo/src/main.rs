@@ -4,7 +4,7 @@ use glam::*;
 use macroquad::{
     color::colors::*,
     input::{is_key_down, is_key_pressed},
-    prelude::{is_mouse_button_pressed, set_camera, Camera2D, Color, KeyCode},
+    prelude::{is_mouse_button_pressed, mouse_position, set_camera, Camera2D, Color, KeyCode},
     rand::gen_range,
     shapes::draw_poly,
     time::get_frame_time,
@@ -189,13 +189,14 @@ async fn main() {
         let ratio = screen_width() / screen_height();
         let w = 20.0;
         let h = w / ratio;
-
-        set_camera(&Camera2D::from_display_rect(macroquad::prelude::Rect {
+        let camera = Camera2D::from_display_rect(macroquad::prelude::Rect {
             x: -w / 2.0,
             y: h / 2.0,
             w,
             h: -h,
-        }));
+        });
+
+        set_camera(&camera);
 
         clear_background(BLACK);
         // draw_rectangle(Vec2::ZERO.as_world(), 50.0, 50.0, BLACK);
@@ -219,6 +220,14 @@ async fn main() {
             );
         }
 
+        let (mouse_x, mouse_y) = mouse_position();
+        let _mouse_screen = vec2(mouse_x, mouse_y);
+        // Working around macroquad using different version of glam.
+        let mouse_world = camera.screen_to_world(macroquad::math::vec2(mouse_x, mouse_y));
+        let mouse_world = vec2(mouse_world.x, mouse_world.y);
+
+        draw_circle(mouse_world, 0.3, WHITE);
+
         // draw_circle(vec2(1.0, 1.0), 1.0, RED);
         // draw_circle(vec2(1.0, -1.0), 1.0, GREEN);
         // draw_circle(vec2(-1.0, -1.0), 1.0, BLUE);
@@ -232,7 +241,7 @@ async fn main() {
                 }
             });
         });
-        
+
         egui_macroquad::draw();
 
         // let mut wants_ball = false;

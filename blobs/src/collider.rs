@@ -36,10 +36,6 @@ impl Collider {
         todo!()
     }
 
-    pub fn compute_aabb(&self) -> Aabb {
-        todo!()
-    }
-
     pub fn collider(&self) -> ! {
         todo!()
     }
