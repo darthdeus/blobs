@@ -1,6 +1,7 @@
 use crate::*;
 use std::{
     collections::hash_map::{DefaultHasher, Entry},
+    collections::HashMap,
     hash::{Hash, Hasher},
 };
 
@@ -160,7 +161,7 @@ pub struct RigidBodyDesc {
     pub radius: f32,
     pub mass: f32,
     pub is_sensor: bool,
-    pub collision_groups: InteractionGroups,
+    pub collision_groups: blobs::InteractionGroups,
 }
 
 impl Default for RigidBodyDesc {
@@ -171,76 +172,7 @@ impl Default for RigidBodyDesc {
             radius: 0.5,
             mass: 1.0,
             is_sensor: false,
-            collision_groups: InteractionGroups::default(),
+            collision_groups: blobs::InteractionGroups::default(),
         }
     }
-}
-
-pub fn spawn_rbd_entity(physics: &mut Physics, id: Index, desc: RigidBodyDesc) {
-    // let entity = world.reserve_entity();
-    // let user_data: u128 = entity.to_bits().get().into();
-
-    let rbd = RigidBody {
-        position: desc.position,
-        position_old: desc.position,
-        mass: desc.mass,
-        velocity_request: desc.initial_velocity,
-        calculated_velocity: Vec2::ZERO,
-        acceleration: Vec2::ZERO,
-        rotation: 0.0,
-        scale: Vec2::ONE,
-        radius: desc.radius,
-        // angular_velocity: 0.0,
-        colliders: vec![],
-        user_data: 0,
-        // user_data,
-        body_type: RigidBodyType::KinematicVelocityBased,
-        collision_groups: desc.collision_groups,
-    };
-
-    let rbd_handle = physics.insert_rbd(rbd);
-
-    let collider = Collider {
-        offset: Vec2::ZERO,
-        absolute_position: desc.position,
-        rotation: 0.0,
-        scale: Vec2::ONE,
-        // user_data,
-        user_data: 0,
-        parent: Some(ColliderParent {
-            handle: rbd_handle,
-            pos_wrt_parent: Vec2::ZERO,
-        }),
-        radius: desc.radius,
-        flags: ColliderFlags {
-            is_sensor: desc.is_sensor,
-        },
-        collision_groups: desc.collision_groups,
-        shape: Box::new(Ball {
-            radius: desc.radius,
-        }),
-    };
-
-    // let collider = ColliderBuilder::ball(size)
-    //     .user_data(user_data)
-    //     .active_events(ActiveEvents::COLLISION_EVENTS)
-    //     .active_collision_types(
-    //         ActiveCollisionTypes::default()
-    //             | ActiveCollisionTypes::KINEMATIC_KINEMATIC,
-    //     )
-    //     .collision_groups(collision_groups);
-
-    physics.insert_collider_with_parent(collider, rbd_handle);
-
-    // commands.insert(
-    //     entity,
-    //     (
-    //         RbdHandleComponent(rbd_handle),
-    //         Transform::position(desc.position),
-    //         Velocity(desc.initial_velocity.unwrap_or(Vec2::ZERO)),
-    //     ),
-    // );
-    // commands.insert(entity, components);
-    //
-    // entity
 }

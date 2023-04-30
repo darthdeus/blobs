@@ -1,6 +1,9 @@
 use std::time::Instant;
 
-use blobs::{perf_counters::perf_counters_new_frame, *};
+use blobs::{
+    perf_counters::{self, perf_counters_new_frame},
+    tracy_span, Constraint,
+};
 use thunderdome::{Arena, Index};
 
 use glam::*;
@@ -18,9 +21,11 @@ use macroquad::{
     window::{clear_background, next_frame, screen_height, screen_width, Conf},
 };
 
+mod rapier_engine;
 mod simulation;
 mod utils;
 
+pub use crate::rapier_engine::*;
 pub use crate::simulation::*;
 pub use crate::utils::*;
 
@@ -43,7 +48,9 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let mut blob_physics = blobs::Physics::new(vec2(0.0, -30.0), false);
+    let gravity = vec2(0.0, -30.0);
+    let mut blob_physics = blobs::Physics::new(gravity, false);
+    let mut rapier_physics = RapierEngine::new(gravity);
 
     blob_physics.constraints.push(Constraint {
         position: Vec2::ZERO,
@@ -51,6 +58,8 @@ async fn main() {
     });
 
     let mut sim = Simulation::new(Box::new(blob_physics));
+    // let mut sim = Simulation::new(Box::new(rapier_physics));
+
     let mut cooldowns = Cooldowns::new();
 
     // physics.spawn_kinematic_ball(
@@ -116,7 +125,7 @@ async fn main() {
                 radius: 0.5,
                 mass: 1.0,
                 is_sensor: false,
-                collision_groups: InteractionGroups::default(),
+                ..Default::default()
             });
 
             // spawn_rbd_entity(
@@ -164,7 +173,7 @@ async fn main() {
                 },
                 mass: 1.0,
                 is_sensor: false,
-                collision_groups: InteractionGroups::default(),
+                ..Default::default()
             });
 
             // physics.spawn_kinematic_ball(
