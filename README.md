@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/blobs.svg)](https://crates.io/crates/blobs)
 [![Documentation](https://docs.rs/blobs/badge.svg)](https://docs.rs/blobs)
-[![Build Status](https://github.com/darthdeus/blobs/actions/workflows/rust.yml/badge.svg)](https://github.com/darthdeus/blobs/actions)
+[![Build Status](https://github.com/darthdeus/blobs/actions/workflows/build.yml/badge.svg)](https://github.com/darthdeus/blobs/actions)
 [![License](https://img.shields.io/crates/l/blobs.svg)](https://github.com/darthdeus/blobs/blob/main/LICENSE)
 
 `blobs` is a rigid body physics engine written in Rust with only a few dependencies, most notably using `glam` instead of `nalgebra`.
