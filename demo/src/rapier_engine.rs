@@ -47,32 +47,61 @@ impl RapierEngine {
 
 impl PhysicsEngine for RapierEngine {
     fn step(&mut self, delta: f64) {
+        self.integration_params.dt = delta as f32;
+
         self.physics_pipeline.step(
-            self.gravity.into(),
+            &vector![self.gravity.x, self.gravity.y],
             &self.integration_params,
             &mut self.island_manager,
             &mut self.broad_phase,
             &mut self.narrow_phase,
             &mut self.rbd_set,
             &mut self.col_set,
-            &mut self.multibody_joint_set,
             &mut self.impulse_joint_set,
+            &mut self.multibody_joint_set,
             &mut self.ccd_solver,
             None,
-            self.physics_hooks,
-            self.event_handler,
+            &(),
+            &(),
         );
     }
 
     fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc) {
-        todo!()
+        let user_data: u128 = id.to_bits() as u128;
+
+        let col = ColliderBuilder::ball(desc.radius)
+            .user_data(user_data)
+            .active_events(ActiveEvents::COLLISION_EVENTS)
+            .active_collision_types(
+                ActiveCollisionTypes::default() | ActiveCollisionTypes::KINEMATIC_KINEMATIC,
+            )
+            // .collision_groups(collision_groups)
+            ;
+
+        let rbd = RigidBodyBuilder::dynamic()
+            .translation(vector![desc.position.x, desc.position.y])
+            .user_data(user_data)
+            .build();
+
+        let rbd_handle = self.rbd_set.insert(rbd);
+        let _col_handle = self
+            .col_set
+            .insert_with_parent(col, rbd_handle, &mut self.rbd_set);
     }
 
     fn collider_count(&self) -> usize {
-        todo!()
+        self.col_set.len()
     }
 
     fn colliders(&self) -> Vec<(Vec2, f32)> {
-        todo!()
+        self.col_set
+            .iter()
+            .map(|(_handle, collider)| {
+                (
+                    vec2(collider.translation().x, collider.translation().y),
+                    0.5,
+                )
+            })
+            .collect()
     }
 }

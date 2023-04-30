@@ -57,8 +57,8 @@ async fn main() {
         radius: 4.0,
     });
 
-    let mut sim = Simulation::new(Box::new(blob_physics));
-    // let mut sim = Simulation::new(Box::new(rapier_physics));
+    // let mut sim = Simulation::new(Box::new(blob_physics));
+    let mut sim = Simulation::new(Box::new(rapier_physics));
 
     let mut cooldowns = Cooldowns::new();
 
@@ -88,6 +88,10 @@ async fn main() {
         };
 
         if is_key_down(KeyCode::F1) && is_key_pressed(KeyCode::Escape) {
+            break;
+        }
+
+        if is_key_pressed(KeyCode::Q) {
             break;
         }
 

@@ -63,6 +63,7 @@ fn spawn_rbd_entity(physics: &mut blobs::Physics, id: Index, desc: RigidBodyDesc
     // let entity = world.reserve_entity();
     // let user_data: u128 = entity.to_bits().get().into();
     use blobs::*;
+    let user_data: u128 = id.to_bits() as u128;
 
     let rbd = RigidBody {
         position: desc.position,
@@ -76,8 +77,7 @@ fn spawn_rbd_entity(physics: &mut blobs::Physics, id: Index, desc: RigidBodyDesc
         radius: desc.radius,
         // angular_velocity: 0.0,
         colliders: vec![],
-        user_data: 0,
-        // user_data,
+        user_data,
         body_type: RigidBodyType::KinematicVelocityBased,
         collision_groups: desc.collision_groups,
     };
@@ -89,8 +89,7 @@ fn spawn_rbd_entity(physics: &mut blobs::Physics, id: Index, desc: RigidBodyDesc
         absolute_position: desc.position,
         rotation: 0.0,
         scale: Vec2::ONE,
-        // user_data,
-        user_data: 0,
+        user_data,
         parent: Some(ColliderParent {
             handle: rbd_handle,
             pos_wrt_parent: Vec2::ZERO,
