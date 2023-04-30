@@ -6,10 +6,21 @@ use macroquad::{
     input::{is_key_down, is_key_pressed},
     prelude::{is_mouse_button_pressed, set_camera, Camera2D, Color, KeyCode},
     rand::gen_range,
-    shapes::draw_circle,
+    shapes::draw_poly,
     time::get_frame_time,
     window::{clear_background, next_frame, screen_height, screen_width, Conf},
 };
+
+fn draw_circle(position: Vec2, radius: f32, color: Color) {
+    draw_poly(
+        position.x,
+        position.y,
+        40 * (radius as u8).min(1),
+        radius,
+        0.,
+        color,
+    );
+}
 
 pub trait ColorExtensions {
     fn alpha(&self, value: f32) -> Color;
@@ -200,19 +211,17 @@ async fn main() {
 
         set_camera(&Camera2D::from_display_rect(macroquad::prelude::Rect {
             x: -w / 2.0,
-            y: -h / 2.0,
+            y: h / 2.0,
             w,
-            h,
+            h: -h,
         }));
-
-        draw_circle(x, y, 15.0, YELLOW);
 
         clear_background(BLACK);
         // draw_rectangle(Vec2::ZERO.as_world(), 50.0, 50.0, BLACK);
-        draw_circle(0.0, 0.0, 4.0, WHITE.alpha(0.1));
+        draw_circle(Vec2::ZERO, 4.0, WHITE.alpha(0.1));
 
         for (_, rbd) in physics.rbd_set.arena.iter() {
-            draw_circle(rbd.position.x, rbd.position.y, rbd.radius, RED);
+            draw_circle(rbd.position, rbd.radius, RED);
         }
 
         if is_mouse_button_pressed(macroquad::prelude::MouseButton::Left) {
@@ -229,14 +238,18 @@ async fn main() {
             );
         }
 
+        draw_circle(vec2(1.0, 1.0), 1.0, RED);
+        draw_circle(vec2(1.0, -1.0), 1.0, GREEN);
+        draw_circle(vec2(-1.0, -1.0), 1.0, BLUE);
+        draw_circle(vec2(-1.0, 1.0), 1.0, YELLOW);
+
+        draw_circle(vec2(x, y), 15.0, YELLOW);
+
         egui_macroquad::ui(|ctx| {
             ctx.set_pixels_per_point(1.5);
             egui::Window::new("Stats").show(ctx, |ui| {
                 for (name, counter) in perf_counters::PerfCounters::global().counters.iter() {
-                    ui.label(format!(
-                        "{:<15}: {:<15.0}",
-                        name, counter.decayed_average,
-                    ));
+                    ui.label(format!("{:<15}: {:<15.0}", name, counter.decayed_average,));
                 }
             });
         });
