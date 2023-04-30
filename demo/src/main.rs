@@ -154,7 +154,7 @@ async fn main() {
         &mut physics,
         RigidBodyDesc {
             position: Vec2::ZERO,
-            initial_velocity: Some(vec2(5.0, 2.0)),
+            initial_velocity: None,
             radius: 0.5,
             mass: 1.0,
             is_sensor: false,
