@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use blobs::{
     perf_counters::{self, perf_counters_new_frame},
-    tracy_span, Constraint,
+    tracy_span, ColliderBuilder, Constraint,
 };
 use thunderdome::{Arena, Index};
 
@@ -56,6 +56,16 @@ async fn main() {
         position: Vec2::ZERO,
         radius: 4.0,
     });
+
+    let ground = rapier2d::prelude::ColliderBuilder::cuboid(10.0, 0.2)
+        .translation(rapier2d::prelude::vector![0.0, -5.0])
+        .collision_groups(rapier2d::geometry::InteractionGroups::new(
+            0b0001.into(),
+            0b0001.into(),
+        ))
+        .build();
+
+    rapier_physics.col_set.insert(ground);
 
     // let mut sim = Simulation::new(Box::new(blob_physics));
     let mut sim = Simulation::new(Box::new(rapier_physics));

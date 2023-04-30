@@ -64,19 +64,30 @@ impl PhysicsEngine for RapierEngine {
             &(),
             &(),
         );
+
+        // for (handle, rbd) in self.rbd_set.iter_mut() {
+        //     if rbd.translation().norm() > 3.5 {
+        //         rbd.set_translation(rbd.translation().normalize() * 3.5, true);
+        //     }
+        // }
+
+        for (handle, col) in self.col_set.iter_mut() {
+            if col.translation().norm() > 3.5 {
+                col.set_translation(col.translation().normalize() * 3.5);
+            }
+        }
     }
 
     fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc) {
         let user_data: u128 = id.to_bits() as u128;
 
-        let col = ColliderBuilder::ball(desc.radius)
+        let col = rapier2d::prelude::ColliderBuilder::ball(desc.radius)
             .user_data(user_data)
             .active_events(ActiveEvents::COLLISION_EVENTS)
             .active_collision_types(
-                ActiveCollisionTypes::default() | ActiveCollisionTypes::KINEMATIC_KINEMATIC,
+                ActiveCollisionTypes::default() | ActiveCollisionTypes::DYNAMIC_DYNAMIC,
             )
-            // .collision_groups(collision_groups)
-            ;
+            .collision_groups(InteractionGroups::new(0b0001.into(), 0b0001.into()));
 
         let rbd = RigidBodyBuilder::dynamic()
             .translation(vector![desc.position.x, desc.position.y])
