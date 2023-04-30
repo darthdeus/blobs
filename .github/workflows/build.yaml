@@ -32,6 +32,11 @@ jobs:
       with:
         cache-on-failure: true
 
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: pkg-config libx11-dev libxi-dev libgl1-mesa-dev libasound2-dev
+        version: 1.0
+
     - name: Run tests
       uses: actions-rs/cargo@v1
       with:
