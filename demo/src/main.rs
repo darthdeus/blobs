@@ -1,6 +1,7 @@
 use std::time::Instant;
 
-use blobs::*;
+use blobs::{perf_counters::perf_counters_new_frame, *};
+use thunderdome::{Arena, Index};
 
 use glam::*;
 use macroquad::{
@@ -62,12 +63,12 @@ async fn main() {
     //     (Sprite::new("1px".to_string(), splat(0.0), 0, RED),),
     // );
 
-    sim.physics.spawn_ball(RigidBodyDesc::default());
+    sim.spawn_ball(RigidBodyDesc::default());
 
     loop {
-        clear_background(Color::new(0.1, 0.1, 0.1, 1.0));
-
         let delta = get_frame_time();
+
+        perf_counters_new_frame(delta as f64);
 
         let physics_time = {
             let start = Instant::now();
@@ -93,9 +94,10 @@ async fn main() {
 
         set_camera(&camera);
 
-        clear_background(BLACK);
+        clear_background(Color::new(0.03, 0.03, 0.03, 1.0));
+
         // draw_rectangle(Vec2::ZERO.as_world(), 50.0, 50.0, BLACK);
-        draw_circle(Vec2::ZERO, 4.0, WHITE.alpha(0.1));
+        draw_circle(Vec2::ZERO, 4.0, WHITE.alpha(0.05));
 
         cooldowns.tick(delta);
 
@@ -108,7 +110,7 @@ async fn main() {
         // }
 
         if is_mouse_button_pressed(macroquad::prelude::MouseButton::Left) {
-            sim.physics.spawn_ball(RigidBodyDesc {
+            sim.spawn_ball(RigidBodyDesc {
                 position: vec2(gen_range(-2.0, 2.0), gen_range(-2.0, 2.0)),
                 initial_velocity: Some(vec2(5.0, 2.0)),
                 radius: 0.5,
@@ -152,7 +154,7 @@ async fn main() {
         }
 
         if wants_ball {
-            sim.physics.spawn_ball(RigidBodyDesc {
+            sim.spawn_ball(RigidBodyDesc {
                 position,
                 initial_velocity: Some(random_circle(3.0)),
                 radius: if random_radius {

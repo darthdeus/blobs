@@ -176,7 +176,7 @@ impl Default for RigidBodyDesc {
     }
 }
 
-pub fn spawn_rbd_entity(physics: &mut Physics, desc: RigidBodyDesc) {
+pub fn spawn_rbd_entity(physics: &mut Physics, id: Index, desc: RigidBodyDesc) {
     // let entity = world.reserve_entity();
     // let user_data: u128 = entity.to_bits().get().into();
 
