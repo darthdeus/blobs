@@ -18,7 +18,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache rust modules
+      uses: Swatinem/rust-cache@v2.0.1
+      with:
+        cache-on-failure: true
+
+    - name: Run tests
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+
   build_and_deploy:
+    needs: test
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -50,17 +70,11 @@ jobs:
         cp target/wasm32-unknown-unknown/release/demo.wasm public/
         cp demo/index.html public/
 
-    # - name: Deploy to GitHub Pages
-    #   uses: peaceiris/actions-gh-pages@v3
-    #   with:
-    #     github_token: ${{ secrets.GITHUB_TOKEN }}
-    #     publish_dir: ./public
-
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v1
       with:
-        # Upload entire repository
         path: ./public
+
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v2
