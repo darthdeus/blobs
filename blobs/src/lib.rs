@@ -3,9 +3,6 @@ use std::{
     sync::mpsc::{Receiver, Sender},
 };
 
-#[derive(Copy, Clone, Debug)]
-pub struct Velocity(pub Vec2);
-
 pub mod perf_counters;
 use crate::perf_counters::*;
 
@@ -35,9 +32,8 @@ pub use crate::query_filter::*;
 pub use crate::rigid_body::*;
 pub use crate::spatial::*;
 
-pub fn groups(memberships: impl Into<Group>, filter: impl Into<Group>) -> InteractionGroups {
-    InteractionGroups::new(memberships.into(), filter.into())
-}
+#[derive(Copy, Clone, Debug)]
+pub struct Velocity(pub Vec2);
 
 #[derive(Clone, Debug)]
 pub struct Ball {

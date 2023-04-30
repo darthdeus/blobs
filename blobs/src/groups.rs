@@ -1,5 +1,9 @@
 use crate::*;
 
+pub fn groups(memberships: impl Into<Group>, filter: impl Into<Group>) -> InteractionGroups {
+    InteractionGroups::new(memberships.into(), filter.into())
+}
+
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 #[repr(C)]
 pub struct InteractionGroups {

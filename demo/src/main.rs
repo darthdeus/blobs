@@ -1,13 +1,14 @@
 use blobs::*;
+
 use glam::*;
 use macroquad::{
     color::colors::*,
     input::{is_key_down, is_key_pressed},
     prelude::{is_mouse_button_pressed, set_camera, Camera2D, Color, KeyCode},
+    rand::gen_range,
     shapes::draw_circle,
-    text::draw_text,
     time::get_frame_time,
-    window::{clear_background, next_frame, screen_height, screen_width}, rand::gen_range,
+    window::{clear_background, next_frame, screen_height, screen_width, Conf},
 };
 
 pub trait ColorExtensions {
@@ -128,7 +129,16 @@ pub fn spawn_rbd_entity(physics: &mut Physics, desc: RigidBodyDesc) {
     // entity
 }
 
-#[macroquad::main("FLOAT")]
+fn window_conf() -> Conf {
+    Conf {
+        window_title: "FLOAT".to_owned(),
+        window_width: 1920,
+        window_height: 1080,
+        ..Default::default()
+    }
+}
+
+#[macroquad::main(window_conf)]
 async fn main() {
     let mut x = screen_width() / 2.0;
     let mut y = screen_height() / 2.0;
@@ -196,7 +206,6 @@ async fn main() {
         }));
 
         draw_circle(x, y, 15.0, YELLOW);
-        draw_text("move the ball with arrow keys", 20.0, 20.0, 20.0, DARKGRAY);
 
         clear_background(BLACK);
         // draw_rectangle(Vec2::ZERO.as_world(), 50.0, 50.0, BLACK);
@@ -219,6 +228,20 @@ async fn main() {
                 },
             );
         }
+
+        egui_macroquad::ui(|ctx| {
+            ctx.set_pixels_per_point(1.5);
+            egui::Window::new("Stats").show(ctx, |ui| {
+                for (name, counter) in perf_counters::PerfCounters::global().counters.iter() {
+                    ui.label(format!(
+                        "{:<15}: {:<15.0}",
+                        name, counter.decayed_average,
+                    ));
+                }
+            });
+        });
+
+        egui_macroquad::draw();
 
         // let mut wants_ball = false;
         // let mut random_radius = false;
