@@ -67,8 +67,8 @@ async fn main() {
 
     rapier_physics.col_set.insert(ground);
 
-    // let mut sim = Simulation::new(Box::new(blob_physics));
-    let mut sim = Simulation::new(Box::new(rapier_physics));
+    let mut sim = Simulation::new(Box::new(blob_physics));
+    // let mut sim = Simulation::new(Box::new(rapier_physics));
 
     let mut cooldowns = Cooldowns::new();
 
@@ -90,11 +90,12 @@ async fn main() {
         perf_counters_new_frame(delta as f64);
 
         let physics_time = {
-            let start = Instant::now();
+            // let start = Instant::now();
             sim.physics.step(delta as f64);
-            let end = Instant::now();
+            // let end = Instant::now();
 
-            (end - start).as_secs_f32()
+            0.1
+            // (end - start).as_secs_f32()
         };
 
         if is_key_down(KeyCode::F1) && is_key_pressed(KeyCode::Escape) {
