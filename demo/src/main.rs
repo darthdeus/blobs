@@ -1,9 +1,12 @@
+use std::time::Instant;
+
 use blobs::*;
 
 use glam::*;
 use macroquad::{
     color::colors::*,
     input::{is_key_down, is_key_pressed},
+    miniquad::conf::Platform,
     prelude::{
         is_mouse_button_down, is_mouse_button_pressed, mouse_position, set_camera, Camera2D, Color,
         KeyCode, MouseButton,
@@ -29,13 +32,17 @@ fn window_conf() -> Conf {
         window_title: "FLOAT".to_owned(),
         window_width: 1920,
         window_height: 1080,
+        platform: Platform {
+            swap_interval: Some(0),
+            ..Default::default()
+        },
         ..Default::default()
     }
 }
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let mut blob_physics = blobs::Physics::new(vec2(0.0, -300.0), false);
+    let mut blob_physics = blobs::Physics::new(vec2(0.0, -30.0), false);
 
     blob_physics.constraints.push(Constraint {
         position: Vec2::ZERO,
@@ -62,7 +69,13 @@ async fn main() {
 
         let delta = get_frame_time();
 
-        sim.physics.step(delta as f64);
+        let physics_time = {
+            let start = Instant::now();
+            sim.physics.step(delta as f64);
+            let end = Instant::now();
+
+            (end - start).as_secs_f32()
+        };
 
         if is_key_down(KeyCode::F1) && is_key_pressed(KeyCode::Escape) {
             break;
@@ -182,6 +195,7 @@ async fn main() {
                 .default_width(250.0)
                 .show(ctx, |ui| {
                     ui.label(format!("FPS: {}", get_fps()));
+                    ui.label(format!("Physics: {}", physics_time));
 
                     // ui.separator();
                     // if let Some(game_loop) = c.game_loop {
