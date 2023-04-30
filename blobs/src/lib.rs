@@ -6,8 +6,8 @@ use std::{
 #[derive(Copy, Clone, Debug)]
 pub struct Velocity(pub Vec2);
 
-mod perf_counters;
-pub use crate::perf_counters::*;
+pub mod perf_counters;
+use crate::perf_counters::*;
 
 pub use atomic_refcell::{AtomicRef, AtomicRefCell};
 pub use once_cell::sync::Lazy;
