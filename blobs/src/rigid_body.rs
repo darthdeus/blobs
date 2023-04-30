@@ -58,8 +58,8 @@ impl RigidBody {
     }
 
     pub fn is_kinematic(&self) -> bool {
-        self.body_type == RigidBodyType::KinematicPositionBased ||
-            self.body_type == RigidBodyType::KinematicVelocityBased
+        self.body_type == RigidBodyType::KinematicPositionBased
+            || self.body_type == RigidBodyType::KinematicVelocityBased
     }
 
     pub fn is_fixed(&self) -> bool {
@@ -94,3 +94,42 @@ pub enum RigidBodyType {
     // Semikinematic, // A kinematic that performs automatic CCD with the fixed environment to avoid traversing it?
     // Disabled,
 }
+
+pub struct RigidBodySet {
+    pub arena: Arena<RigidBody>,
+}
+
+impl RigidBodySet {
+    pub fn new() -> Self {
+        Self {
+            arena: Arena::new(),
+        }
+    }
+
+    pub fn get(&self, handle: RigidBodyHandle) -> Option<&RigidBody> {
+        self.arena.get(handle.0)
+    }
+
+    pub fn get_mut(&mut self, handle: RigidBodyHandle) -> Option<&mut RigidBody> {
+        self.arena.get_mut(handle.0)
+    }
+
+    pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
+        if self.arena.remove(handle.0).is_none() {
+            eprintln!(
+                "Trying to remove a rbd that doesn't exit anymore, id: {:?}",
+                handle.0
+            );
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.arena.len()
+    }
+
+    pub fn insert(&mut self, body: RigidBody) -> RigidBodyHandle {
+        RigidBodyHandle(self.arena.insert(body))
+    }
+}
+
+pub struct RigidBodyBuilder {}

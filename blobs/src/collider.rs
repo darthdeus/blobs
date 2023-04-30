@@ -82,3 +82,49 @@ impl Default for ColliderFlags {
         }
     }
 }
+
+pub struct ColliderSet {
+    pub arena: Arena<Collider>,
+}
+
+impl ColliderSet {
+    pub fn new() -> Self {
+        Self {
+            arena: Arena::new(),
+        }
+    }
+
+    pub fn get(&self, handle: ColliderHandle) -> Option<&Collider> {
+        self.arena.get(handle.0)
+    }
+
+    pub fn get_mut(&mut self, handle: ColliderHandle) -> Option<&mut Collider> {
+        self.arena.get_mut(handle.0)
+    }
+
+    pub fn len(&self) -> usize {
+        self.arena.len()
+    }
+
+    pub fn remove(&mut self, handle: ColliderHandle) {
+        self.arena.remove(handle.0);
+    }
+
+    pub fn insert_with_parent(
+        &mut self,
+        collider: Collider,
+        rbd_handle: RigidBodyHandle,
+        rbd_set: &mut RigidBodySet,
+    ) -> ColliderHandle {
+        let col_handle = self.arena.insert(collider);
+
+        if let Some(rbd) = rbd_set.get_mut(rbd_handle) {
+            rbd.colliders.push(ColliderHandle(col_handle));
+        }
+        // TODO: insert into rbd
+
+        ColliderHandle(col_handle)
+    }
+}
+
+pub struct ColliderBuilder {}
