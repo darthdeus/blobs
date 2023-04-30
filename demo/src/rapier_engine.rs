@@ -2,6 +2,7 @@ use crate::*;
 use rapier2d::prelude::*;
 
 pub struct RapierEngine {
+    pub gravity: Vec2,
     pub rbd_set: RigidBodySet,
     pub col_set: ColliderSet,
     pub integration_params: IntegrationParameters,
@@ -29,6 +30,7 @@ impl RapierEngine {
         let ccd_solver = CCDSolver::new();
 
         Self {
+            gravity,
             rbd_set,
             col_set,
             integration_params,
@@ -45,7 +47,21 @@ impl RapierEngine {
 
 impl PhysicsEngine for RapierEngine {
     fn step(&mut self, delta: f64) {
-        todo!()
+        self.physics_pipeline.step(
+            self.gravity.into(),
+            &self.integration_params,
+            &mut self.island_manager,
+            &mut self.broad_phase,
+            &mut self.narrow_phase,
+            &mut self.rbd_set,
+            &mut self.col_set,
+            &mut self.multibody_joint_set,
+            &mut self.impulse_joint_set,
+            &mut self.ccd_solver,
+            None,
+            self.physics_hooks,
+            self.event_handler,
+        );
     }
 
     fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc) {
