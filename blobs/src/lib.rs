@@ -105,22 +105,6 @@ pub struct Cuboid {
     pub half_extents: Vec2,
 }
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct ColliderHandle(Index);
-
-// pub struct BlobPhysics {
-//     bodies: Vec<RigidBody>,
-// }
-//
-// impl BlobPhysics {
-//     pub fn step(&mut self, delta: f32) {
-//         for body in self.bodies.iter_mut() {
-//             body.position += body.velocity * delta;
-//             body.rotation += body.angular_velocity * delta;
-//         }
-//     }
-// }
-
 pub struct QueryPipeline {}
 
 impl QueryPipeline {

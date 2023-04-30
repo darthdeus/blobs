@@ -5,7 +5,6 @@ static PERF_COUNTERS: Lazy<AtomicRefCell<PerfCounters>> =
 
 #[derive(Default)]
 pub struct PerfCounters {
-    // pub counters: HashMap<String, Counter>,
     pub counters: HashMap<Cow<'static, str>, Counter>,
 }
 

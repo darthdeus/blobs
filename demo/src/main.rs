@@ -12,20 +12,17 @@ use macroquad::{
 };
 
 fn draw_circle(position: Vec2, radius: f32, color: Color) {
+    // macroquad::shapes::draw_circle(position.x, position.y, radius, color);
     draw_poly(
-        position.x,
-        position.y,
-        40 * (radius as u8).min(1),
-        radius,
-        0.,
-        color,
+        position.x, position.y, 40, // 40 * (radius as u8).max(1),
+        radius, 0., color,
     );
 }
 
 pub trait ColorExtensions {
     fn alpha(&self, value: f32) -> Color;
     fn mix(&self, other: Color, value: f32) -> Color;
-    // fn egui(&self) -> egui::Color32;
+    fn egui(&self) -> egui::Color32;
     fn darken(&self, amount: f32) -> Color;
 }
 
@@ -46,14 +43,14 @@ impl ColorExtensions for Color {
         )
     }
 
-    // fn egui(&self) -> egui::Color32 {
-    //     egui::Color32::from_rgba_unmultiplied(
-    //         (self.r * 255.0) as u8,
-    //         (self.g * 255.0) as u8,
-    //         (self.b * 255.0) as u8,
-    //         (self.a * 255.0) as u8,
-    //     )
-    // }
+    fn egui(&self) -> egui::Color32 {
+        egui::Color32::from_rgba_unmultiplied(
+            (self.r * 255.0) as u8,
+            (self.g * 255.0) as u8,
+            (self.b * 255.0) as u8,
+            (self.a * 255.0) as u8,
+        )
+    }
 
     fn darken(&self, amount: f32) -> Color {
         let amount = 1.0 - amount;
@@ -151,9 +148,6 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let mut x = screen_width() / 2.0;
-    let mut y = screen_height() / 2.0;
-
     let mut physics = Physics::new(vec2(0.0, -300.0), false);
 
     // physics.spawn_kinematic_ball(
@@ -192,19 +186,6 @@ async fn main() {
             break;
         }
 
-        if is_key_down(KeyCode::Right) {
-            x += 1.0;
-        }
-        if is_key_down(KeyCode::Left) {
-            x -= 1.0;
-        }
-        if is_key_down(KeyCode::Down) {
-            y += 1.0;
-        }
-        if is_key_down(KeyCode::Up) {
-            y -= 1.0;
-        }
-
         let ratio = screen_width() / screen_height();
         let w = 20.0;
         let h = w / ratio;
@@ -238,12 +219,10 @@ async fn main() {
             );
         }
 
-        draw_circle(vec2(1.0, 1.0), 1.0, RED);
-        draw_circle(vec2(1.0, -1.0), 1.0, GREEN);
-        draw_circle(vec2(-1.0, -1.0), 1.0, BLUE);
-        draw_circle(vec2(-1.0, 1.0), 1.0, YELLOW);
-
-        draw_circle(vec2(x, y), 15.0, YELLOW);
+        // draw_circle(vec2(1.0, 1.0), 1.0, RED);
+        // draw_circle(vec2(1.0, -1.0), 1.0, GREEN);
+        // draw_circle(vec2(-1.0, -1.0), 1.0, BLUE);
+        // draw_circle(vec2(-1.0, 1.0), 1.0, YELLOW);
 
         egui_macroquad::ui(|ctx| {
             ctx.set_pixels_per_point(1.5);
@@ -253,7 +232,7 @@ async fn main() {
                 }
             });
         });
-
+        
         egui_macroquad::draw();
 
         // let mut wants_ball = false;

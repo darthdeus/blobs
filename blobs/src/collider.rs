@@ -49,12 +49,14 @@ impl Collider {
     }
 }
 
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ColliderHandle(pub Index);
+
 #[derive(Copy, Clone, Debug, PartialEq)]
-/// Information about the rigid-body this collider is attached to.
 pub struct ColliderParent {
     /// Handle of the rigid-body this collider is attached to.
     pub handle: RigidBodyHandle,
-    /// Const position of this collider relative to its parent rigid-body.
+    /// Position of this collider relative to its parent rigid-body.
     pub pos_wrt_parent: Vec2,
 }
 
