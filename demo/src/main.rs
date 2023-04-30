@@ -4,12 +4,18 @@ use glam::*;
 use macroquad::{
     color::colors::*,
     input::{is_key_down, is_key_pressed},
-    prelude::{is_mouse_button_pressed, mouse_position, set_camera, Camera2D, Color, KeyCode},
+    prelude::{
+        is_mouse_button_down, is_mouse_button_pressed, mouse_position, set_camera, Camera2D, Color,
+        KeyCode, MouseButton,
+    },
     rand::gen_range,
     shapes::draw_poly,
     time::get_frame_time,
     window::{clear_background, next_frame, screen_height, screen_width, Conf},
 };
+
+mod utils;
+use crate::utils::*;
 
 fn draw_circle(position: Vec2, radius: f32, color: Color) {
     // macroquad::shapes::draw_circle(position.x, position.y, radius, color);
@@ -149,6 +155,7 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut physics = Physics::new(vec2(0.0, -300.0), false);
+    let mut cooldowns = Cooldowns::new();
 
     // physics.spawn_kinematic_ball(
     //     c.world,
@@ -180,6 +187,8 @@ async fn main() {
     loop {
         clear_background(Color::new(0.1, 0.1, 0.1, 1.0));
 
+        let delta = get_frame_time();
+
         physics.step(8, get_frame_time() as f64);
 
         if is_key_down(KeyCode::F1) && is_key_pressed(KeyCode::Escape) {
@@ -201,6 +210,8 @@ async fn main() {
         clear_background(BLACK);
         // draw_rectangle(Vec2::ZERO.as_world(), 50.0, 50.0, BLACK);
         draw_circle(Vec2::ZERO, 4.0, WHITE.alpha(0.1));
+
+        cooldowns.tick(delta);
 
         for (_, rbd) in physics.rbd_set.arena.iter() {
             draw_circle(rbd.position, rbd.radius, RED);
@@ -226,6 +237,61 @@ async fn main() {
         let mouse_world = camera.screen_to_world(macroquad::math::vec2(mouse_x, mouse_y));
         let mouse_world = vec2(mouse_world.x, mouse_world.y);
 
+        let mut wants_ball = false;
+        let mut random_radius = false;
+        let mut position = random_around(vec2(1.0, 1.0), 0.1, 0.2);
+
+        if is_mouse_button_down(MouseButton::Left) {
+            if cooldowns.can_use("ball", 0.005) {
+                wants_ball = true;
+                random_radius = true;
+                position = mouse_world;
+            }
+        }
+
+        if physics.rbd_count() < 200 {
+            if cooldowns.can_use("ball", 0.1) {
+                wants_ball = true;
+            }
+        }
+
+        if is_mouse_button_pressed(MouseButton::Right) {
+            random_radius = false;
+            wants_ball = true;
+        }
+
+        if wants_ball {
+            spawn_rbd_entity(
+                &mut physics,
+                RigidBodyDesc {
+                    position,
+                    initial_velocity: Some(random_circle(3.0)),
+                    radius: if random_radius {
+                        gen_range(0.05, 0.2)
+                    } else {
+                        gen_range(0.05, 0.1)
+                    },
+                    mass: 1.0,
+                    is_sensor: false,
+                    collision_groups: InteractionGroups::default(),
+                },
+            );
+
+            // physics.spawn_kinematic_ball(
+            //     world,
+            //     c.commands,
+            //     if random_radius {
+            //         gen_range(0.05, 0.2)
+            //     } else {
+            //         gen_range(0.05, 0.1)
+            //     },
+            //     position,
+            //     Some(random_vec(1.0, 50.0)),
+            //     groups(1, 1),
+            //     (Sprite::new("1px".to_string(), splat(0.0), 0, RED),),
+            // );
+        }
+
         draw_circle(mouse_world, 0.3, WHITE);
 
         // draw_circle(vec2(1.0, 1.0), 1.0, RED);
@@ -243,45 +309,6 @@ async fn main() {
         });
 
         egui_macroquad::draw();
-
-        // let mut wants_ball = false;
-        // let mut random_radius = false;
-        // let mut position = random_around(vec2(1.0, 1.0), 0.1, 0.2);
-        //
-        // if is_mouse_button_down(MouseButton::Left) {
-        //     if c.cooldowns.can_use("ball", 0.005) {
-        //         wants_ball = true;
-        //         random_radius = true;
-        //         position = c.mouse_world;
-        //     }
-        // }
-        //
-        // if c.physics.rbd_count() < 200 {
-        //     if c.cooldowns.can_use("ball", 0.1) {
-        //         wants_ball = true;
-        //     }
-        // }
-        //
-        // if is_mouse_button_pressed(MouseButton::Right) {
-        //     random_radius = false;
-        //     wants_ball = true;
-        // }
-        //
-        // if wants_ball {
-        //     c.physics.spawn_kinematic_ball(
-        //         c.world,
-        //         c.commands,
-        //         if random_radius {
-        //             gen_range(0.05, 0.2)
-        //         } else {
-        //             gen_range(0.05, 0.1)
-        //         },
-        //         position,
-        //         Some(random_vec(1.0, 50.0)),
-        //         groups(1, 1),
-        //         (Sprite::new("1px".to_string(), splat(0.0), 0, RED),),
-        //     );
-        // }
 
         next_frame().await
     }

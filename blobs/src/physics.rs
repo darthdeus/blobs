@@ -43,20 +43,20 @@ impl Physics {
     }
 
     pub fn step(&mut self, substeps: i32, delta: f64) {
-        let _span = span!("step");
+        let _span = tracy_span!("step");
         self.integrate(substeps, delta as f32);
         self.time += delta;
     }
 
     pub fn fixed_step(&mut self, substeps: i32, frame_time: f64) {
-        let _span = span!("step");
+        let _span = tracy_span!("step");
         self.accumulator += frame_time;
 
         let delta = 1.0 / 60.0;
         let mut max_steps = 3;
 
         while self.accumulator >= delta && max_steps > 0 {
-            let _span = span!("integrate");
+            let _span = tracy_span!("integrate");
             self.integrate(substeps, delta as f32);
 
             self.accumulator -= delta;
@@ -118,7 +118,7 @@ impl Physics {
     }
 
     pub fn brute_force_collisions(&mut self) {
-        let _span = span!("brute_force_collisions");
+        let _span = tracy_span!("brute_force_collisions");
 
         let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
 
@@ -174,7 +174,7 @@ impl Physics {
     }
 
     pub fn spatial_collisions(&mut self) {
-        let _span = span!("spatial_collisions");
+        let _span = tracy_span!("spatial_collisions");
 
         let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
         let mut count = 0;
@@ -254,7 +254,7 @@ impl Physics {
     }
 
     fn update_objects(&mut self, delta: f32) {
-        let _span = span!("update positions");
+        let _span = tracy_span!("update positions");
 
         for (idx, body) in self.rbd_set.arena.iter_mut() {
             if let Some(req_velocity) = body.velocity_request.take() {
@@ -307,11 +307,11 @@ impl Physics {
     }
 
     fn integrate(&mut self, substeps: i32, delta: f32) {
-        let _span = span!("integrate");
+        let _span = tracy_span!("integrate");
         let step_delta = delta / substeps as f32;
 
         for _ in 0..substeps {
-            let _span = span!("substep");
+            let _span = tracy_span!("substep");
 
             self.apply_gravity();
 

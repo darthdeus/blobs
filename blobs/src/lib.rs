@@ -133,7 +133,7 @@ pub fn get_collider_parent(
 
 #[cfg(feature = "tracy")]
 #[macro_export]
-macro_rules! span {
+macro_rules! tracy_span {
     ($name: expr) => {
         Some(tracy_client::span!($name, 0))
     };
@@ -141,7 +141,7 @@ macro_rules! span {
 
 #[cfg(not(feature = "tracy"))]
 #[macro_export]
-macro_rules! span {
+macro_rules! tracy_span {
     ($name: expr) => {
         None::<()>
     };
