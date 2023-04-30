@@ -71,11 +71,11 @@ impl PhysicsEngine for RapierEngine {
         //     }
         // }
 
-        for (handle, col) in self.col_set.iter_mut() {
-            if col.translation().norm() > 3.5 {
-                col.set_translation(col.translation().normalize() * 3.5);
-            }
-        }
+        // for (_handle, col) in self.col_set.iter_mut() {
+        //     if col.translation().norm() > 3.5 {
+        //         col.set_translation(col.translation().normalize() * 3.5);
+        //     }
+        // }
     }
 
     fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc) {
@@ -107,11 +107,15 @@ impl PhysicsEngine for RapierEngine {
     fn colliders(&self) -> Vec<(Vec2, f32)> {
         self.col_set
             .iter()
-            .map(|(_handle, collider)| {
-                (
-                    vec2(collider.translation().x, collider.translation().y),
-                    0.5,
-                )
+            .filter_map(|(_handle, collider)| {
+                if let Some(ball) = collider.shape().as_ball() {
+                    Some((
+                        vec2(collider.translation().x, collider.translation().y),
+                        ball.radius,
+                    ))
+                } else {
+                    None
+                }
             })
             .collect()
     }

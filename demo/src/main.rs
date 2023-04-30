@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use blobs::{
     perf_counters::{self, perf_counters_new_frame},
-    tracy_span, ColliderBuilder, Constraint,
+    Constraint,
 };
 use thunderdome::{Arena, Index};
 
@@ -57,8 +57,8 @@ async fn main() {
         radius: 4.0,
     });
 
-    let ground = rapier2d::prelude::ColliderBuilder::cuboid(10.0, 0.2)
-        .translation(rapier2d::prelude::vector![0.0, -5.0])
+    let ground = rapier2d::prelude::ColliderBuilder::cuboid(100.0, 1.0)
+        .translation([0.0, -5.0].into())
         .collision_groups(rapier2d::geometry::InteractionGroups::new(
             0b0001.into(),
             0b0001.into(),
@@ -270,7 +270,7 @@ async fn main() {
 
                     #[cfg(feature = "jemalloc")]
                     {
-                        let _span = tracy_span!("jemalloc stats");
+                        let _span = blobs::tracy_span!("jemalloc stats");
                         ui.separator();
 
                         ui.label("jemalloc");
