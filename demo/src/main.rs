@@ -1,6 +1,6 @@
 use blobs::{
     perf_counters::{self, perf_counters_new_frame},
-    Constraint,
+    Constraint, ZipTuple,
 };
 use std::any::Any;
 use thunderdome::{Arena, Index};
@@ -15,7 +15,7 @@ use macroquad::{
         KeyCode, MouseButton,
     },
     rand::gen_range,
-    shapes::draw_poly,
+    shapes::{draw_poly, draw_line},
     time::{get_fps, get_frame_time},
     window::{clear_background, next_frame, screen_height, screen_width, Conf},
 };
@@ -70,8 +70,14 @@ async fn main() {
     // let mut sim = Simulation::new(Box::new(rapier_physics));
 
     {
-        let a = sim.balls.insert(Vec2::ZERO);
-        let b = sim.balls.insert(Vec2::ZERO);
+        let a = sim.balls.insert(TestObject {
+            position: Vec2::ZERO,
+            color: YELLOW,
+        });
+        let b = sim.balls.insert(TestObject {
+            position: Vec2::ZERO,
+            color: GREEN,
+        });
 
         let blobs = sim.cast_physics();
 
@@ -80,7 +86,7 @@ async fn main() {
             a,
             RigidBodyDesc {
                 position: vec2(3.0, 0.0),
-                gravity_mod: 0.0,
+                // gravity_mod: 0.0,
                 ..Default::default()
             },
         );
@@ -90,7 +96,7 @@ async fn main() {
             b,
             RigidBodyDesc {
                 position: vec2(-1.0, 0.0),
-                gravity_mod: 0.0,
+                gravity_mod: 0.000,
                 ..Default::default()
             },
         );
@@ -113,14 +119,21 @@ async fn main() {
 
     // sim.spawn_ball(RigidBodyDesc::default());
 
+    let mut frame_index = 0;
+
     loop {
         let delta = get_frame_time();
+        frame_index += 1;
 
         perf_counters_new_frame(delta as f64);
 
         let physics_time = {
             let start = instant::now();
-            sim.physics.step(delta as f64);
+
+            if frame_index > 20 {
+                sim.physics.step(delta as f64);
+            }
+
             let end = instant::now();
 
             #[cfg(target_arch = "wasm32")]
@@ -162,8 +175,29 @@ async fn main() {
 
         cooldowns.tick(delta);
 
-        for (position, radius) in sim.physics.colliders() {
-            draw_circle(position, radius, RED);
+        for (index, object) in sim.balls.iter() {
+            let collider = sim.physics.collider(index);
+            draw_circle(collider.position, collider.radius, object.color);
+        }
+
+        {
+            let blobs = sim.cast_physics::<blobs::Physics>();
+            for (_, joint) in blobs.joints.iter() {
+                let (rbd_a, rbd_b) = blobs
+                    .rbd_set
+                    .arena
+                    .get2_mut(joint.rigid_body_a.0, joint.rigid_body_b.0)
+                    .zip_unwrap();
+
+                draw_line(
+                    rbd_a.position.x,
+                    rbd_a.position.y,
+                    rbd_b.position.x,
+                    rbd_b.position.y,
+                    0.1,
+                    WHITE,
+                );
+            }
         }
 
         // for (_, rbd) in physics.rbd_set.arena.iter() {
@@ -171,14 +205,17 @@ async fn main() {
         // }
 
         if is_mouse_button_pressed(macroquad::prelude::MouseButton::Left) {
-            sim.spawn_ball(RigidBodyDesc {
-                position: vec2(gen_range(-2.0, 2.0), gen_range(-2.0, 2.0)),
-                initial_velocity: Some(vec2(5.0, 2.0)),
-                radius: 0.5,
-                mass: 1.0,
-                is_sensor: false,
-                ..Default::default()
-            });
+            sim.spawn_ball(
+                RigidBodyDesc {
+                    position: vec2(gen_range(-2.0, 2.0), gen_range(-2.0, 2.0)),
+                    initial_velocity: Some(vec2(5.0, 2.0)),
+                    radius: 0.5,
+                    mass: 1.0,
+                    is_sensor: false,
+                    ..Default::default()
+                },
+                RED,
+            );
 
             // spawn_rbd_entity(
             //     &mut physics,
@@ -215,18 +252,21 @@ async fn main() {
         }
 
         if wants_ball {
-            sim.spawn_ball(RigidBodyDesc {
-                position,
-                initial_velocity: Some(random_circle(3.0)),
-                radius: if random_radius {
-                    gen_range(0.05, 0.2)
-                } else {
-                    gen_range(0.05, 0.1)
+            sim.spawn_ball(
+                RigidBodyDesc {
+                    position,
+                    initial_velocity: Some(random_circle(3.0)),
+                    radius: if random_radius {
+                        gen_range(0.05, 0.2)
+                    } else {
+                        gen_range(0.05, 0.1)
+                    },
+                    mass: 1.0,
+                    is_sensor: false,
+                    ..Default::default()
                 },
-                mass: 1.0,
-                is_sensor: false,
-                ..Default::default()
-            });
+                RED,
+            );
 
             // physics.spawn_kinematic_ball(
             //     world,

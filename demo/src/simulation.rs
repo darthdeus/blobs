@@ -1,7 +1,12 @@
 use crate::*;
 
+pub struct TestObject {
+    pub position: Vec2,
+    pub color: Color,
+}
+
 pub struct Simulation {
-    pub balls: Arena<Vec2>,
+    pub balls: Arena<TestObject>,
     pub physics: Box<dyn PhysicsEngine>,
 }
 
@@ -21,8 +26,11 @@ impl Simulation {
         self.physics.collider_count()
     }
 
-    pub fn spawn_ball(&mut self, desc: RigidBodyDesc) {
-        let id = self.balls.insert(Vec2::ZERO);
+    pub fn spawn_ball(&mut self, desc: RigidBodyDesc, color: Color) {
+        let id = self.balls.insert(TestObject {
+            position: Vec2::ZERO,
+            color,
+        });
         self.physics.spawn_ball(id, desc);
     }
 
@@ -40,6 +48,12 @@ pub trait PhysicsEngine {
 
     // fn colliders(&self) -> impl Iterator<Item = (Vec2, f32)>;
     fn colliders(&self) -> Vec<(Vec2, f32)>;
+    fn collider(&self, index: Index) -> SimpleCollider;
+}
+
+pub struct SimpleCollider {
+    pub position: Vec2,
+    pub radius: f32,
 }
 
 impl PhysicsEngine for blobs::Physics {
@@ -65,6 +79,15 @@ impl PhysicsEngine for blobs::Physics {
             .iter()
             .map(|(_, x)| (x.position, x.radius))
             .collect()
+    }
+
+    fn collider(&self, index: Index) -> SimpleCollider {
+        let collider = self.col_set.arena.get(index).unwrap();
+
+        SimpleCollider {
+            position: collider.absolute_position,
+            radius: collider.radius,
+        }
     }
 }
 

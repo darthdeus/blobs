@@ -355,9 +355,9 @@ impl Physics {
                 self.brute_force_collisions();
             }
 
-            self.apply_constraints();
-            self.update_objects(step_delta);
             self.solve_fixed_joints(step_delta);
+            self.update_objects(step_delta);
+            self.apply_constraints();
         }
 
         // for (_, obj_a) in self.rbd_set.arena.iter_mut() {
@@ -396,9 +396,41 @@ impl Physics {
         // }
     }
 
+    // fn solve_fixed_joints(&mut self, dt: f32) {
+    //     let iterations = 40;
+    //     let inv_dt = 1.0 / dt;
+    //
+    //     for _ in 0..iterations {
+    //         for (_, joint) in self.joints.iter() {
+    //             let (body_a, body_b) = self
+    //                 .rbd_set
+    //                 .arena
+    //                 .get2_mut(joint.rigid_body_a.0, joint.rigid_body_b.0)
+    //                 .zip()
+    //                 .unwrap();
+    //
+    //             let world_anchor_a = body_a.position + joint.anchor_a;
+    //             let world_anchor_b = body_b.position + joint.anchor_b;
+    //
+    //             let delta_position = world_anchor_b - world_anchor_a;
+    //             let distance = delta_position.length();
+    //
+    //             if distance < 1e-6 {
+    //                 continue;
+    //             }
+    //
+    //             let correction = dt * (distance - joint.distance) * delta_position / distance;
+    //             let inv_mass_sum = body_a.mass.recip() + body_b.mass.recip();
+    //
+    //             body_a.position += body_a.mass.recip() / inv_mass_sum * correction * 0.5;
+    //             body_b.position -= body_b.mass.recip() / inv_mass_sum * correction * 0.5;
+    //         }
+    //     }
+    // }
+
     fn solve_fixed_joints(&mut self, dt: f32) {
-        let iterations = 40;
-        let inv_dt = 1.0 / dt;
+        let iterations = 10;
+        // let inv_dt = 1.0 / dt;
 
         for _ in 0..iterations {
             for (_, joint) in self.joints.iter() {
@@ -419,11 +451,18 @@ impl Physics {
                     continue;
                 }
 
-                let correction = (distance - joint.distance) * delta_position / distance;
-                let inv_mass_sum = body_a.mass.recip() + body_b.mass.recip();
+                let off_by = distance - joint.distance;
 
-                body_a.position -= body_a.mass.recip() / inv_mass_sum * correction * 0.5;
-                body_b.position += body_b.mass.recip() / inv_mass_sum * correction * 0.5;
+                // println!("off_by: {} ... {}", off_by, delta_position.length());
+
+                let correction = off_by * delta_position / distance;
+                // let inv_mass_sum = body_a.mass.recip() + body_b.mass.recip();
+
+                // body_a.position -= body_a.mass.recip() / inv_mass_sum * correction * 0.5;
+                // body_b.position += body_b.mass.recip() / inv_mass_sum * correction * 0.5;
+
+                body_a.position += dt * correction * 0.5;
+                body_b.position -= dt * correction * 0.5;
             }
         }
     }

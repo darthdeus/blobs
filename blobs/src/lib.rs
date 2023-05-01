@@ -149,7 +149,7 @@ macro_rules! tracy_span {
     };
 }
 
-trait ZipTuple<A, B> {
+pub trait ZipTuple<A, B> {
     fn zip(self) -> Option<(A, B)>;
     fn zip_unwrap(self) -> (A, B);
 }
