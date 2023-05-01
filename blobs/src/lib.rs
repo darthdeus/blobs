@@ -24,6 +24,7 @@ mod physics;
 mod query_filter;
 mod rigid_body;
 mod spatial;
+mod springs;
 mod tests;
 
 pub use crate::collider::*;
@@ -33,6 +34,7 @@ pub use crate::physics::*;
 pub use crate::query_filter::*;
 pub use crate::rigid_body::*;
 pub use crate::spatial::*;
+pub use crate::springs::*;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Velocity(pub Vec2);

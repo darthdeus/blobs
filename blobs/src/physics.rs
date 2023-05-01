@@ -9,6 +9,8 @@ pub struct Physics {
     pub rbd_set: RigidBodySet,
     pub col_set: ColliderSet,
     pub joints: Arena<FixedJoint>,
+    pub springs: Arena<Spring>,
+
     pub query_pipeline: QueryPipeline,
 
     pub spatial_hash: SpatialHash,
@@ -36,6 +38,8 @@ impl Physics {
             rbd_set: RigidBodySet::new(),
             col_set: ColliderSet::new(),
             joints: Arena::new(),
+            springs: Arena::new(),
+
             query_pipeline: QueryPipeline::new(),
 
             use_spatial_hash,

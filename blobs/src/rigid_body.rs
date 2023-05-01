@@ -39,6 +39,10 @@ impl RigidBody {
         self.position
     }
 
+    pub fn apply_force(&mut self, force: Vec2) {
+        self.acceleration += force / self.mass;
+    }
+
     pub fn set_velocity(&mut self, velocity: Vec2) {
         self.velocity_request = Some(velocity);
     }

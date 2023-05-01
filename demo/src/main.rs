@@ -1,7 +1,4 @@
-use blobs::{
-    perf_counters::{self, perf_counters_new_frame},
-    Constraint, ZipTuple,
-};
+use blobs::{perf_counters::perf_counters_new_frame, *};
 use std::any::Any;
 use thunderdome::{Arena, Index};
 
@@ -141,14 +138,15 @@ fn make_world(gravity: Vec2) -> Simulation {
 
 #[derive(Copy, Clone, Debug)]
 pub struct DragState {
-    pub index: Index,
+    pub index: RigidBodyHandle,
     pub start: Vec2,
     pub offset: Vec2,
+    pub spring: SpringHandle,
 }
 
 #[derive(Copy, Clone, Debug)]
 pub struct HoverState {
-    pub index: Index,
+    pub index: RigidBodyHandle,
     pub position: Vec2,
 }
 
@@ -279,7 +277,7 @@ async fn main() {
                 hovered = true;
 
                 hover = Some(HoverState {
-                    index: collider.parent.unwrap().0,
+                    index: collider.parent.unwrap(),
                     position: collider.absolute_position,
                 });
             }
@@ -291,6 +289,29 @@ async fn main() {
             };
 
             draw_circle(collider.absolute_position, collider.radius, color);
+        }
+
+        {
+            let blobs = sim
+                .physics
+                .as_any()
+                .downcast_ref::<blobs::Physics>()
+                .unwrap();
+
+            for (_, spring) in blobs.springs.iter() {
+                let rbd_set = &blobs.rbd_set;
+
+                let a = rbd_set.get(spring.rigid_body_a).unwrap().position;
+
+                let b = match spring.connection_b {
+                    SpringConnection::RigidBody(rbd_handle_b) => {
+                        rbd_set.get(rbd_handle_b).unwrap().position
+                    }
+                    SpringConnection::Location(position) => position,
+                };
+
+                draw_line(a.x, a.y, b.x, b.y, 0.1, BLUE);
+            }
         }
 
         {
@@ -411,7 +432,16 @@ async fn main() {
 
                 if let Some(hover) = hover {
                     if drag.is_none() && is_mouse_button_down(MouseButton::Left) {
+                        let spring = sim.cast_physics::<blobs::Physics>().springs.insert(Spring {
+                            rigid_body_a: hover.index,
+                            connection_b: SpringConnection::Location(mouse_world),
+                            rest_length: 0.0,
+                            stiffness: 0.2,
+                            damping: 0.2,
+                        });
+
                         drag = Some(DragState {
+                            spring: SpringHandle(spring),
                             index: hover.index,
                             start: hover.position,
                             offset: mouse_world - hover.position,
@@ -420,14 +450,25 @@ async fn main() {
                 }
 
                 if is_mouse_button_released(MouseButton::Left) {
+                    if let Some(drag) = drag {
+                        sim.cast_physics::<blobs::Physics>()
+                            .springs
+                            .remove(*drag.spring);
+                    }
+
                     drag = None;
                 }
 
                 if let Some(drag) = drag {
                     if is_mouse_button_down(MouseButton::Left) {
-                        let rbd = sim.cast_physics::<blobs::Physics>().rbd_set.arena.get_mut(drag.index).unwrap();
+                        let blobs = sim.cast_physics::<blobs::Physics>();
+
+                        // let rbd = blobs.rbd_set.arena.get_mut(drag.index.0).unwrap();
+                        blobs.springs.get_mut(*drag.spring).unwrap().connection_b =
+                            SpringConnection::Location(mouse_world);
+
                         // rbd.position = drag.start + mouse_world - drag.offset;
-                        rbd.position = mouse_world;
+                        // rbd.position = mouse_world;
                     }
                 }
 
