@@ -62,7 +62,7 @@ impl PhysicsEngine for blobs::Physics {
     }
 
     fn step(&mut self, delta: f64) {
-        self.step(8, delta);
+        self.fixed_step(delta);
     }
 
     fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc) {

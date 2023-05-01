@@ -415,6 +415,7 @@ dependencies = [
  "egui",
  "egui-macroquad",
  "glam 0.23.0",
+ "grids",
  "instant",
  "jemalloc-ctl",
  "jemallocator",
@@ -592,9 +593,9 @@ checksum = "8e4afd9ad95555081e109fe1d21f2a30c691b5f0919c67dfa690a2e1eb6bd51c"
 
 [[package]]
 name = "grids"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a539fce9a54b9a1483572b378b87f0208f360b336979c13374d9f524dc2557eb"
+checksum = "3c27d7770bb8b758d11a86edb354f296d8252fba4c6b41cbbdc142be64e0fdc6"
 dependencies = [
  "glam 0.23.0",
 ]

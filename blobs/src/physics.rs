@@ -3,6 +3,9 @@ use crate::*;
 pub struct Physics {
     pub gravity: Vec2,
 
+    pub substeps: u32,
+    pub joint_iterations: u32,
+
     pub rbd_set: RigidBodySet,
     pub col_set: ColliderSet,
     pub joints: Arena<FixedJoint>,
@@ -27,6 +30,9 @@ impl Physics {
         Self {
             gravity,
 
+            substeps: 8,
+            joint_iterations: 4,
+
             rbd_set: RigidBodySet::new(),
             col_set: ColliderSet::new(),
             joints: Arena::new(),
@@ -44,13 +50,14 @@ impl Physics {
         }
     }
 
-    pub fn step(&mut self, substeps: i32, delta: f64) {
+    pub fn step(&mut self, delta: f64) {
         let _span = tracy_span!("step");
-        self.integrate(substeps, delta as f32);
+        self.integrate(self.substeps, delta as f32);
         self.time += delta;
     }
 
-    pub fn fixed_step(&mut self, substeps: i32, frame_time: f64) {
+    // TODO: ????
+    pub fn fixed_step(&mut self, frame_time: f64) {
         let _span = tracy_span!("step");
         self.accumulator += frame_time;
 
@@ -59,7 +66,7 @@ impl Physics {
 
         while self.accumulator >= delta && max_steps > 0 {
             let _span = tracy_span!("integrate");
-            self.integrate(substeps, delta as f32);
+            self.integrate(self.substeps, delta as f32);
 
             self.accumulator -= delta;
             self.time += delta;
@@ -140,8 +147,6 @@ impl Physics {
             anchor_b,
             distance: (rbd_a.position + anchor_a - rbd_b.position - anchor_b).length(),
         };
-
-        println!("created a joint with distance {}", joint.distance);
 
         let joint_handle = JointHandle(self.joints.insert(joint));
 
@@ -340,7 +345,7 @@ impl Physics {
         }
     }
 
-    fn integrate(&mut self, substeps: i32, delta: f32) {
+    fn integrate(&mut self, substeps: u32, delta: f32) {
         let _span = tracy_span!("integrate");
         let step_delta = delta / substeps as f32;
 
@@ -429,10 +434,9 @@ impl Physics {
     // }
 
     fn solve_fixed_joints(&mut self, dt: f32) {
-        let iterations = 10;
         // let inv_dt = 1.0 / dt;
 
-        for _ in 0..iterations {
+        for _ in 0..self.joint_iterations {
             for (_, joint) in self.joints.iter() {
                 let (body_a, body_b) = self
                     .rbd_set

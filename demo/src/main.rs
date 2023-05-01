@@ -258,8 +258,8 @@ async fn main() {
                     rbd_a.position.y,
                     rbd_b.position.x,
                     rbd_b.position.y,
-                    0.1,
-                    WHITE,
+                    0.05,
+                    YELLOW.alpha(0.5),
                 );
             }
         }
@@ -267,24 +267,6 @@ async fn main() {
         // for (_, rbd) in physics.rbd_set.arena.iter() {
         //     draw_circle(rbd.position, rbd.radius, RED);
         // }
-
-        if is_mouse_button_pressed(macroquad::prelude::MouseButton::Left) {
-            sim.spawn_ball(
-                RigidBodyDesc {
-                    position: vec2(gen_range(-2.0, 2.0), gen_range(-2.0, 2.0)),
-                    initial_velocity: Some(vec2(5.0, 2.0)),
-                    radius: 0.5,
-                    mass: 1.0,
-                    is_sensor: false,
-                    ..Default::default()
-                },
-                RED,
-            );
-
-            // spawn_rbd_entity(
-            //     &mut physics,
-            // );
-        }
 
         let (mouse_x, mouse_y) = mouse_position();
         let _mouse_screen = vec2(mouse_x, mouse_y);
@@ -296,57 +278,6 @@ async fn main() {
         let mut random_radius = false;
         let mut position = random_around(vec2(1.0, 1.0), 0.1, 0.2);
 
-        if is_mouse_button_down(MouseButton::Left) {
-            if cooldowns.can_use("ball", 0.005) {
-                wants_ball = true;
-                random_radius = true;
-                position = mouse_world;
-            }
-        }
-
-        if sim.body_count() < 200 && enable_autospawn {
-            if cooldowns.can_use("ball", 0.1) {
-                wants_ball = true;
-            }
-        }
-
-        if is_mouse_button_pressed(MouseButton::Right) {
-            random_radius = false;
-            wants_ball = true;
-        }
-
-        if wants_ball {
-            sim.spawn_ball(
-                RigidBodyDesc {
-                    position,
-                    initial_velocity: Some(random_circle(3.0)),
-                    radius: if random_radius {
-                        gen_range(0.05, 0.2)
-                    } else {
-                        gen_range(0.05, 0.1)
-                    },
-                    mass: 1.0,
-                    is_sensor: false,
-                    ..Default::default()
-                },
-                RED,
-            );
-
-            // physics.spawn_kinematic_ball(
-            //     world,
-            //     c.commands,
-            //     if random_radius {
-            //         gen_range(0.05, 0.2)
-            //     } else {
-            //         gen_range(0.05, 0.1)
-            //     },
-            //     position,
-            //     Some(random_vec(1.0, 50.0)),
-            //     groups(1, 1),
-            //     (Sprite::new("1px".to_string(), splat(0.0), 0, RED),),
-            // );
-        }
-
         draw_circle(mouse_world, 0.3, WHITE);
 
         // draw_circle(vec2(1.0, 1.0), 1.0, RED);
@@ -357,17 +288,59 @@ async fn main() {
         egui_macroquad::ui(|ctx| {
             ctx.set_pixels_per_point(1.5);
 
+            if !ctx.wants_pointer_input() {
+                if is_mouse_button_down(MouseButton::Left) {
+                    if cooldowns.can_use("ball", 0.005) {
+                        wants_ball = true;
+                        random_radius = true;
+                        position = mouse_world;
+                    }
+                }
+
+                if is_mouse_button_pressed(MouseButton::Right) {
+                    random_radius = false;
+                    wants_ball = true;
+                }
+
+                // if is_mouse_button_pressed(macroquad::prelude::MouseButton::Left) {
+                //     sim.spawn_ball(
+                //         RigidBodyDesc {
+                //             position: vec2(gen_range(-2.0, 2.0), gen_range(-2.0, 2.0)),
+                //             initial_velocity: Some(vec2(5.0, 2.0)),
+                //             radius: 0.5,
+                //             mass: 1.0,
+                //             is_sensor: false,
+                //             ..Default::default()
+                //         },
+                //         RED,
+                //     );
+                //
+                //     // spawn_rbd_entity(
+                //     //     &mut physics,
+                //     // );
+                // }
+            }
+
+            egui::Window::new("Physics Parameters").show(ctx, |ui| {
+                let blobs = sim.cast_physics::<blobs::Physics>();
+
+                ui.horizontal(|ui| {
+                    ui.label("substeps");
+                    ui.add(egui::DragValue::new(&mut blobs.substeps));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("joint iterations");
+                    ui.add(egui::DragValue::new(&mut blobs.joint_iterations));
+                });
+            });
+
             egui::Window::new("Performance")
                 .anchor(egui::Align2::RIGHT_BOTTOM, egui::vec2(0.0, 0.0))
                 .default_width(250.0)
                 .show(ctx, |ui| {
                     ui.label(format!("FPS: {}", get_fps()));
                     ui.label(format!("Physics: {:0.6}", physics_time));
-
-                    // ui.separator();
-                    // if let Some(game_loop) = c.game_loop {
-                    //     game_loop.lock().performance_metrics(&mut c.world, ui);
-                    // }
 
                     ui.separator();
 
@@ -425,6 +398,44 @@ async fn main() {
                     }
                 });
         });
+
+        if sim.body_count() < 200 && enable_autospawn {
+            if cooldowns.can_use("ball", 0.1) {
+                wants_ball = true;
+            }
+        }
+
+        if wants_ball {
+            sim.spawn_ball(
+                RigidBodyDesc {
+                    position,
+                    initial_velocity: Some(random_circle(3.0)),
+                    radius: if random_radius {
+                        gen_range(0.05, 0.2)
+                    } else {
+                        gen_range(0.05, 0.1)
+                    },
+                    mass: 1.0,
+                    is_sensor: false,
+                    ..Default::default()
+                },
+                RED,
+            );
+
+            // physics.spawn_kinematic_ball(
+            //     world,
+            //     c.commands,
+            //     if random_radius {
+            //         gen_range(0.05, 0.2)
+            //     } else {
+            //         gen_range(0.05, 0.1)
+            //     },
+            //     position,
+            //     Some(random_vec(1.0, 50.0)),
+            //     groups(1, 1),
+            //     (Sprite::new("1px".to_string(), splat(0.0), 0, RED),),
+            // );
+        }
 
         egui_macroquad::draw();
 
