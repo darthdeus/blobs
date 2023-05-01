@@ -213,7 +213,17 @@ async fn main() {
         }
 
         if is_key_down(KeyCode::F3) {
+            let blobs = sim.cast_physics::<blobs::Physics>();
+
+            let joint_iterations = blobs.joint_iterations;
+            let substeps = blobs.substeps;
+
             sim = make_world(gravity);
+
+            let blobs = sim.cast_physics::<blobs::Physics>();
+
+            blobs.joint_iterations = joint_iterations;
+            blobs.substeps = substeps;
         }
 
         if is_key_pressed(KeyCode::Q) {
@@ -287,39 +297,6 @@ async fn main() {
 
         egui_macroquad::ui(|ctx| {
             ctx.set_pixels_per_point(1.5);
-
-            if !ctx.wants_pointer_input() {
-                if is_mouse_button_down(MouseButton::Left) {
-                    if cooldowns.can_use("ball", 0.005) {
-                        wants_ball = true;
-                        random_radius = true;
-                        position = mouse_world;
-                    }
-                }
-
-                if is_mouse_button_pressed(MouseButton::Right) {
-                    random_radius = false;
-                    wants_ball = true;
-                }
-
-                // if is_mouse_button_pressed(macroquad::prelude::MouseButton::Left) {
-                //     sim.spawn_ball(
-                //         RigidBodyDesc {
-                //             position: vec2(gen_range(-2.0, 2.0), gen_range(-2.0, 2.0)),
-                //             initial_velocity: Some(vec2(5.0, 2.0)),
-                //             radius: 0.5,
-                //             mass: 1.0,
-                //             is_sensor: false,
-                //             ..Default::default()
-                //         },
-                //         RED,
-                //     );
-                //
-                //     // spawn_rbd_entity(
-                //     //     &mut physics,
-                //     // );
-                // }
-            }
 
             egui::Window::new("Physics Parameters").show(ctx, |ui| {
                 let blobs = sim.cast_physics::<blobs::Physics>();
@@ -397,6 +374,39 @@ async fn main() {
                         ui.label(format!("{} MB resident", resident / (1024 * 1024)));
                     }
                 });
+
+            if !ctx.wants_pointer_input() {
+                if is_mouse_button_down(MouseButton::Left) {
+                    if cooldowns.can_use("ball", 0.005) {
+                        wants_ball = true;
+                        random_radius = true;
+                        position = mouse_world;
+                    }
+                }
+
+                if is_mouse_button_pressed(MouseButton::Right) {
+                    random_radius = false;
+                    wants_ball = true;
+                }
+
+                // if is_mouse_button_pressed(macroquad::prelude::MouseButton::Left) {
+                //     sim.spawn_ball(
+                //         RigidBodyDesc {
+                //             position: vec2(gen_range(-2.0, 2.0), gen_range(-2.0, 2.0)),
+                //             initial_velocity: Some(vec2(5.0, 2.0)),
+                //             radius: 0.5,
+                //             mass: 1.0,
+                //             is_sensor: false,
+                //             ..Default::default()
+                //         },
+                //         RED,
+                //     );
+                //
+                //     // spawn_rbd_entity(
+                //     //     &mut physics,
+                //     // );
+                // }
+            }
         });
 
         if sim.body_count() < 200 && enable_autospawn {
