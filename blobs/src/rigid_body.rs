@@ -14,6 +14,7 @@ pub struct RigidBody {
     pub position_old: Vec2,
 
     pub mass: f32,
+    pub gravity_mod: f32,
 
     pub rotation: f32,
     pub scale: Vec2,
@@ -25,6 +26,7 @@ pub struct RigidBody {
     pub calculated_velocity: Vec2,
 
     pub colliders: Vec<ColliderHandle>,
+    pub connected_joints: Vec<JointHandle>,
 
     pub user_data: u128,
 

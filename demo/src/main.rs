@@ -2,6 +2,7 @@ use blobs::{
     perf_counters::{self, perf_counters_new_frame},
     Constraint,
 };
+use std::any::Any;
 use thunderdome::{Arena, Index};
 
 use glam::*;
@@ -68,6 +69,32 @@ async fn main() {
     let mut sim = Simulation::new(Box::new(blob_physics));
     // let mut sim = Simulation::new(Box::new(rapier_physics));
 
+    {
+        let a = sim.balls.insert(Vec2::ZERO);
+        let b = sim.balls.insert(Vec2::ZERO);
+
+        spawn_rbd_entity(
+            sim.cast_physics(),
+            a,
+            RigidBodyDesc {
+                position: vec2(3.0, 0.0),
+                gravity_mod: 0.0,
+                ..Default::default()
+            },
+        );
+
+        spawn_rbd_entity(
+            sim.cast_physics(),
+            b,
+            RigidBodyDesc {
+                position: vec2(-1.0, 0.0),
+                gravity_mod: 0.0,
+                ..Default::default()
+            },
+        );
+    }
+
+    let mut enable_autospawn = false;
     let mut cooldowns = Cooldowns::new();
 
     // physics.spawn_kinematic_ball(
@@ -80,7 +107,7 @@ async fn main() {
     //     (Sprite::new("1px".to_string(), splat(0.0), 0, RED),),
     // );
 
-    sim.spawn_ball(RigidBodyDesc::default());
+    // sim.spawn_ball(RigidBodyDesc::default());
 
     loop {
         let delta = get_frame_time();
@@ -102,6 +129,10 @@ async fn main() {
 
         if is_key_down(KeyCode::F1) && is_key_pressed(KeyCode::Escape) {
             break;
+        }
+
+        if is_key_down(KeyCode::F2) {
+            enable_autospawn = !enable_autospawn;
         }
 
         if is_key_pressed(KeyCode::Q) {
@@ -168,7 +199,7 @@ async fn main() {
             }
         }
 
-        if sim.body_count() < 200 {
+        if sim.body_count() < 200 && enable_autospawn {
             if cooldowns.can_use("ball", 0.1) {
                 wants_ball = true;
             }

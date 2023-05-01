@@ -25,9 +25,14 @@ impl Simulation {
         let id = self.balls.insert(Vec2::ZERO);
         self.physics.spawn_ball(id, desc);
     }
+
+    pub fn cast_physics<T: 'static>(&mut self) -> &mut T {
+        self.physics.as_any().downcast_mut().unwrap()
+    }
 }
 
 pub trait PhysicsEngine {
+    fn as_any(&mut self) -> &mut dyn Any;
     fn step(&mut self, delta: f64);
 
     fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc);
@@ -38,12 +43,20 @@ pub trait PhysicsEngine {
 }
 
 impl PhysicsEngine for blobs::Physics {
+    fn as_any(&mut self) -> &mut dyn Any {
+        self
+    }
+
     fn step(&mut self, delta: f64) {
         self.step(8, delta);
     }
 
     fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc) {
         spawn_rbd_entity(self, id, desc);
+    }
+
+    fn collider_count(&self) -> usize {
+        self.col_set.arena.len()
     }
 
     fn colliders(&self) -> Vec<(Vec2, f32)> {
@@ -53,13 +66,13 @@ impl PhysicsEngine for blobs::Physics {
             .map(|(_, x)| (x.position, x.radius))
             .collect()
     }
-
-    fn collider_count(&self) -> usize {
-        self.col_set.arena.len()
-    }
 }
 
-fn spawn_rbd_entity(physics: &mut blobs::Physics, id: Index, desc: RigidBodyDesc) {
+pub fn spawn_rbd_entity(
+    physics: &mut blobs::Physics,
+    id: Index,
+    desc: RigidBodyDesc,
+) -> blobs::RigidBodyHandle {
     // let entity = world.reserve_entity();
     // let user_data: u128 = entity.to_bits().get().into();
     use blobs::*;
@@ -69,6 +82,7 @@ fn spawn_rbd_entity(physics: &mut blobs::Physics, id: Index, desc: RigidBodyDesc
         position: desc.position,
         position_old: desc.position,
         mass: desc.mass,
+        gravity_mod: desc.gravity_mod,
         velocity_request: desc.initial_velocity,
         calculated_velocity: Vec2::ZERO,
         acceleration: Vec2::ZERO,
@@ -77,6 +91,7 @@ fn spawn_rbd_entity(physics: &mut blobs::Physics, id: Index, desc: RigidBodyDesc
         radius: desc.radius,
         // angular_velocity: 0.0,
         colliders: vec![],
+        connected_joints: vec![],
         user_data,
         body_type: RigidBodyType::KinematicVelocityBased,
         collision_groups: desc.collision_groups,
@@ -112,15 +127,5 @@ fn spawn_rbd_entity(physics: &mut blobs::Physics, id: Index, desc: RigidBodyDesc
 
     physics.insert_collider_with_parent(collider, rbd_handle);
 
-    // commands.insert(
-    //     entity,
-    //     (
-    //         RbdHandleComponent(rbd_handle),
-    //         Transform::position(desc.position),
-    //         Velocity(desc.initial_velocity.unwrap_or(Vec2::ZERO)),
-    //     ),
-    // );
-    // commands.insert(entity, components);
-    //
-    // entity
+    rbd_handle
 }

@@ -46,6 +46,10 @@ impl RapierEngine {
 }
 
 impl PhysicsEngine for RapierEngine {
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+
     fn step(&mut self, delta: f64) {
         self.integration_params.dt = delta as f32;
 

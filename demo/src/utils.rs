@@ -161,6 +161,7 @@ pub struct RigidBodyDesc {
     pub radius: f32,
     pub mass: f32,
     pub is_sensor: bool,
+    pub gravity_mod: f32,
     pub collision_groups: blobs::InteractionGroups,
 }
 
@@ -172,6 +173,7 @@ impl Default for RigidBodyDesc {
             radius: 0.5,
             mass: 1.0,
             is_sensor: false,
+            gravity_mod: 1.0,
             collision_groups: blobs::InteractionGroups::default(),
         }
     }

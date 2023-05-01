@@ -19,6 +19,7 @@ use thunderdome::{Arena, Index};
 
 mod collider;
 mod groups;
+mod joints;
 mod physics;
 mod query_filter;
 mod rigid_body;
@@ -27,6 +28,7 @@ mod tests;
 
 pub use crate::collider::*;
 pub use crate::groups::*;
+pub use crate::joints::*;
 pub use crate::physics::*;
 pub use crate::query_filter::*;
 pub use crate::rigid_body::*;
@@ -145,4 +147,22 @@ macro_rules! tracy_span {
     ($name: expr) => {
         None::<()>
     };
+}
+
+trait ZipTuple<A, B> {
+    fn zip(self) -> Option<(A, B)>;
+    fn zip_unwrap(self) -> (A, B);
+}
+
+impl<A, B> ZipTuple<A, B> for (Option<A>, Option<B>) {
+    fn zip(self) -> Option<(A, B)> {
+        match self {
+            (Some(a), Some(b)) => Some((a, b)),
+            _ => None,
+        }
+    }
+
+    fn zip_unwrap(self) -> (A, B) {
+        self.zip().unwrap()
+    }
 }

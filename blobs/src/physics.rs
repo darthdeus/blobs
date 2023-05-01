@@ -5,6 +5,7 @@ pub struct Physics {
 
     pub rbd_set: RigidBodySet,
     pub col_set: ColliderSet,
+    pub joints: Arena<FixedJoint>,
     pub query_pipeline: QueryPipeline,
 
     pub spatial_hash: SpatialHash,
@@ -28,6 +29,7 @@ impl Physics {
 
             rbd_set: RigidBodySet::new(),
             col_set: ColliderSet::new(),
+            joints: Arena::new(),
             query_pipeline: QueryPipeline::new(),
 
             use_spatial_hash,
@@ -115,6 +117,36 @@ impl Physics {
             self.spatial_hash.move_point(id, offset);
             rigid_body.position += offset;
         }
+    }
+
+    pub fn create_fixed_joint(
+        &mut self,
+        rbd_handle_a: RigidBodyHandle,
+        rbd_handle_b: RigidBodyHandle,
+        anchor_a: Vec2,
+        anchor_b: Vec2,
+    ) -> JointHandle {
+        let (rbd_a, rbd_b) = self
+            .rbd_set
+            .arena
+            .get2_mut(rbd_handle_a.0, rbd_handle_b.0)
+            .zip()
+            .unwrap();
+
+        let joint = FixedJoint {
+            rigid_body_a: rbd_handle_a,
+            rigid_body_b: rbd_handle_b,
+            anchor_a,
+            anchor_b,
+            distance: (rbd_a.position + anchor_a - rbd_b.position - anchor_b).length(),
+        };
+
+        let joint_handle = JointHandle(self.joints.insert(joint));
+
+        rbd_a.connected_joints.push(joint_handle);
+        rbd_b.connected_joints.push(joint_handle);
+
+        joint_handle
     }
 
     pub fn brute_force_collisions(&mut self) {
@@ -285,7 +317,7 @@ impl Physics {
 
     fn apply_gravity(&mut self) {
         for (_, body) in self.rbd_set.arena.iter_mut() {
-            body.accelerate(self.gravity);
+            body.accelerate(self.gravity * body.gravity_mod);
         }
     }
 
