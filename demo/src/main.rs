@@ -11,8 +11,8 @@ use macroquad::{
     input::{is_key_down, is_key_pressed},
     miniquad::conf::Platform,
     prelude::{
-        is_mouse_button_down, is_mouse_button_pressed, mouse_position, set_camera, Camera2D, Color,
-        KeyCode, MouseButton,
+        is_mouse_button_down, is_mouse_button_pressed, is_mouse_button_released, mouse_position,
+        set_camera, Camera2D, Color, KeyCode, MouseButton,
     },
     rand::gen_range,
     shapes::{draw_line, draw_poly},
@@ -56,15 +56,12 @@ fn make_world(gravity: Vec2) -> Simulation {
     });
 
     let mut sim = Simulation::new(Box::new(blob_physics));
-    // let mut sim = Simulation::new(Box::new(rapier_physics));
 
     {
         let spacing = 0.3;
         let num = 10;
         let w = num;
         let h = num;
-
-        // let mut grid = grids::Grid::new(w, h, None);
 
         let offset = -vec2(w as f32 * spacing, h as f32 * spacing) / 2.0;
 
@@ -161,6 +158,7 @@ async fn main() {
 
     let mut drag: Option<DragState> = None;
     let mut hover: Option<HoverState> = None;
+    // let mut sim = Simulation::new(Box::new(rapier_physics));
 
     #[cfg(feature = "rapier")]
     {
@@ -415,13 +413,23 @@ async fn main() {
                     if drag.is_none() && is_mouse_button_down(MouseButton::Left) {
                         drag = Some(DragState {
                             index: hover.index,
-                            start: mouse_world,
+                            start: hover.position,
                             offset: mouse_world - hover.position,
                         });
                     }
                 }
 
-                if let Some(drag) = drag {}
+                if is_mouse_button_released(MouseButton::Left) {
+                    drag = None;
+                }
+
+                if let Some(drag) = drag {
+                    if is_mouse_button_down(MouseButton::Left) {
+                        let rbd = sim.cast_physics::<blobs::Physics>().rbd_set.arena.get_mut(drag.index).unwrap();
+                        // rbd.position = drag.start + mouse_world - drag.offset;
+                        rbd.position = mouse_world;
+                    }
+                }
 
                 if is_mouse_button_pressed(MouseButton::Right) {
                     random_radius = false;
