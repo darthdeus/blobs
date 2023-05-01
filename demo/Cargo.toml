@@ -20,3 +20,5 @@ blobs = { path = "../blobs" }
 jemalloc-ctl = { version = "0.5.0", optional = true }
 jemallocator = { version = "0.5.0", optional = true }
 thunderdome = "0.6.0"
+
+instant = "0.1"

@@ -90,12 +90,11 @@ async fn main() {
         perf_counters_new_frame(delta as f64);
 
         let physics_time = {
-            // let start = Instant::now();
+            let start = instant::now();
             sim.physics.step(delta as f64);
-            // let end = Instant::now();
+            let end = instant::now();
 
-            0.1
-            // (end - start).as_secs_f32()
+            (end - start) / 1000.0
         };
 
         if is_key_down(KeyCode::F1) && is_key_pressed(KeyCode::Escape) {
