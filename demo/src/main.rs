@@ -324,7 +324,6 @@ async fn main() {
                             counter_name, counter.decayed_average,
                         ));
                     }
-                    ui.separator();
 
                     // #[cfg(not(target_arch = "wasm32"))]
                     // {
