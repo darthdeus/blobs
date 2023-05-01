@@ -298,7 +298,7 @@ async fn main() {
                 .default_width(250.0)
                 .show(ctx, |ui| {
                     ui.label(format!("FPS: {}", get_fps()));
-                    ui.label(format!("Physics: {}", physics_time));
+                    ui.label(format!("Physics: {:0.6}", physics_time));
 
                     // ui.separator();
                     // if let Some(game_loop) = c.game_loop {

@@ -124,7 +124,7 @@ impl PhysicsEngine for RapierEngine {
             .collect()
     }
 
-    fn collider(&self, index: Index) -> SimpleCollider {
+    fn collider(&self, _index: Index) -> SimpleCollider {
         todo!()
     }
 }
