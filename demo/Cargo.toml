@@ -6,6 +6,7 @@ edition = "2021"
 [features]
 default = []
 jemalloc = ["jemalloc-ctl", "jemallocator"]
+rapier = ["rapier2d"]
 
 [dependencies]
 macroquad = "0.3.25"
@@ -13,7 +14,7 @@ glam = "0.23.0"
 egui-macroquad = "0.15.0"
 egui = "0.21.0"
 
-rapier2d = "0.17.2"
+rapier2d = { version = "0.17.2", optional = true }
 
 blobs = { path = "../blobs" }
 

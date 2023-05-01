@@ -20,10 +20,12 @@ use macroquad::{
     window::{clear_background, next_frame, screen_height, screen_width, Conf},
 };
 
+#[cfg(feature = "rapier")]
 mod rapier_engine;
 mod simulation;
 mod utils;
 
+#[cfg(feature = "rapier")]
 pub use crate::rapier_engine::*;
 pub use crate::simulation::*;
 pub use crate::utils::*;
@@ -100,49 +102,42 @@ fn make_world(gravity: Vec2) -> Simulation {
                 blobs.create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
             }
         }
-
-        // for x in 0..w {
-        //     for y in 0..h {
-        //
-        //         grid[(x, y)] = Some((idx, rbd_handle));
-        //     }
-        // }
     }
 
-    // {
-    //     let a = sim.balls.insert(TestObject {
-    //         position: Vec2::ZERO,
-    //         color: YELLOW,
-    //     });
-    //     let b = sim.balls.insert(TestObject {
-    //         position: Vec2::ZERO,
-    //         color: GREEN,
-    //     });
-    //
-    //     let blobs = sim.cast_physics();
-    //
-    //     let rbd_a = spawn_rbd_entity(
-    //         blobs,
-    //         a,
-    //         RigidBodyDesc {
-    //             position: vec2(3.0, 0.0),
-    //             // gravity_mod: 0.0,
-    //             ..Default::default()
-    //         },
-    //     );
-    //
-    //     let rbd_b = spawn_rbd_entity(
-    //         blobs,
-    //         b,
-    //         RigidBodyDesc {
-    //             position: vec2(-1.0, 0.0),
-    //             gravity_mod: 0.000,
-    //             ..Default::default()
-    //         },
-    //     );
-    //
-    //     blobs.create_fixed_joint(rbd_a, rbd_b, Vec2::ZERO, Vec2::ZERO);
-    // }
+    {
+        let a = sim.balls.insert(TestObject {
+            position: Vec2::ZERO,
+            color: YELLOW,
+        });
+        let b = sim.balls.insert(TestObject {
+            position: Vec2::ZERO,
+            color: GREEN,
+        });
+
+        let blobs = sim.cast_physics();
+
+        let rbd_a = spawn_rbd_entity(
+            blobs,
+            a,
+            RigidBodyDesc {
+                position: vec2(3.0, 0.0),
+                // gravity_mod: 0.0,
+                ..Default::default()
+            },
+        );
+
+        let rbd_b = spawn_rbd_entity(
+            blobs,
+            b,
+            RigidBodyDesc {
+                position: vec2(-3.0, 0.0),
+                gravity_mod: 0.1,
+                ..Default::default()
+            },
+        );
+
+        blobs.create_fixed_joint(rbd_a, rbd_b, Vec2::ZERO, Vec2::ZERO);
+    }
 
     sim
 }
@@ -151,32 +146,23 @@ fn make_world(gravity: Vec2) -> Simulation {
 async fn main() {
     let gravity = vec2(0.0, -30.0);
 
-    let mut rapier_physics = RapierEngine::new(gravity);
+    #[cfg(feature = "rapier")]
+    {
+        let mut rapier_physics = RapierEngine::new(gravity);
 
-    let ground = rapier2d::prelude::ColliderBuilder::cuboid(100.0, 1.0)
-        .translation([0.0, -5.0].into())
-        .collision_groups(rapier2d::geometry::InteractionGroups::new(
-            0b0001.into(),
-            0b0001.into(),
-        ))
-        .build();
+        let ground = rapier2d::prelude::ColliderBuilder::cuboid(100.0, 1.0)
+            .translation([0.0, -5.0].into())
+            .collision_groups(rapier2d::geometry::InteractionGroups::new(
+                0b0001.into(),
+                0b0001.into(),
+            ))
+            .build();
 
-    rapier_physics.col_set.insert(ground);
+        rapier_physics.col_set.insert(ground);
+    }
 
     let mut enable_autospawn = false;
     let mut cooldowns = Cooldowns::new();
-
-    // physics.spawn_kinematic_ball(
-    //     c.world,
-    //     c.commands,
-    //     0.4,
-    //     random_vec(-3.0, 3.0),
-    //     Some(random_vec(-1.0, 1.0)),
-    //     groups(1, 1),
-    //     (Sprite::new("1px".to_string(), splat(0.0), 0, RED),),
-    // );
-
-    // sim.spawn_ball(RigidBodyDesc::default());
 
     let mut frame_index = 0;
     let mut sim = make_world(gravity);
