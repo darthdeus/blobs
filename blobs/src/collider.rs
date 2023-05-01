@@ -7,7 +7,7 @@ pub struct Collider {
     pub scale: Vec2,
 
     pub user_data: u128,
-    pub parent: Option<ColliderParent>,
+    pub parent: Option<RigidBodyHandle>,
 
     pub radius: f32,
 
@@ -20,24 +20,8 @@ pub struct Collider {
 }
 
 impl Collider {
-    pub fn parent(&self) -> Option<RigidBodyHandle> {
-        self.parent.map(|x| x.handle)
-    }
-
-    pub fn is_sensor(&self) -> bool {
-        todo!()
-    }
-
     pub fn translation(&self) -> Vec2 {
         self.absolute_position
-    }
-
-    pub fn rotation(&self) -> Rotation {
-        todo!()
-    }
-
-    pub fn collider(&self) -> ! {
-        todo!()
     }
 
     pub fn shape(&self) -> &dyn Shape {
@@ -47,14 +31,6 @@ impl Collider {
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ColliderHandle(pub Index);
-
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct ColliderParent {
-    /// Handle of the rigid-body this collider is attached to.
-    pub handle: RigidBodyHandle,
-    /// Position of this collider relative to its parent rigid-body.
-    pub pos_wrt_parent: Vec2,
-}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 /// A set of flags for controlling collision/intersection filtering,

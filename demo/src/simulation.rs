@@ -90,10 +90,7 @@ fn spawn_rbd_entity(physics: &mut blobs::Physics, id: Index, desc: RigidBodyDesc
         rotation: 0.0,
         scale: Vec2::ONE,
         user_data,
-        parent: Some(ColliderParent {
-            handle: rbd_handle,
-            pos_wrt_parent: Vec2::ZERO,
-        }),
+        parent: Some(rbd_handle),
         radius: desc.radius,
         flags: ColliderFlags {
             is_sensor: desc.is_sensor,

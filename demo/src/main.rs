@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use blobs::{
     perf_counters::{self, perf_counters_new_frame},
     Constraint,
@@ -94,7 +92,12 @@ async fn main() {
             sim.physics.step(delta as f64);
             let end = instant::now();
 
-            (end - start) / 1000.0
+            #[cfg(target_arch = "wasm32")]
+            let result = (end - start);
+            #[cfg(not(target_arch = "wasm32"))]
+            let result = (end - start) / 1000.0;
+
+            result
         };
 
         if is_key_down(KeyCode::F1) && is_key_pressed(KeyCode::Escape) {

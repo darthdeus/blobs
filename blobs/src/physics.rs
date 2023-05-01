@@ -145,7 +145,7 @@ impl Physics {
                 let min_dist = col_a.radius + col_b.radius;
 
                 if distance < min_dist {
-                    let (Some(rbd_a), Some(rbd_b)) = self.rbd_set.arena.get2_mut(parent_a.handle.0, parent_b.handle.0) else { continue; };
+                    let (Some(rbd_a), Some(rbd_b)) = self.rbd_set.arena.get2_mut(parent_a.0, parent_b.0) else { continue; };
 
                     if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
                         let n = axis / distance;
@@ -182,7 +182,7 @@ impl Physics {
         for (_i, idx_a) in keys.iter().enumerate() {
             let col_a = self.col_set.arena.get(*idx_a).unwrap();
             let parent_a = col_a.parent.unwrap();
-            let rbd_a = self.rbd_set.arena.get(parent_a.handle.0).unwrap();
+            let rbd_a = self.rbd_set.arena.get(parent_a.0).unwrap();
 
             const MAX_COLLIDER_RADIUS: f32 = 1.0;
 
@@ -213,8 +213,8 @@ impl Physics {
                     let min_dist = col_a.radius + col_b.radius;
 
                     if distance < min_dist {
-                        let parent_a_handle = parent_a.handle.0;
-                        let parent_b_handle = parent_b.handle.0;
+                        let parent_a_handle = parent_a.0;
+                        let parent_b_handle = parent_b.0;
 
                         let (Some(rbd_a), Some(rbd_b)) = self
                             .rbd_set
