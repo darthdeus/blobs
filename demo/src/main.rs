@@ -142,9 +142,25 @@ fn make_world(gravity: Vec2) -> Simulation {
     sim
 }
 
+#[derive(Copy, Clone, Debug)]
+pub struct DragState {
+    pub index: Index,
+    pub start: Vec2,
+    pub offset: Vec2,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct HoverState {
+    pub index: Index,
+    pub position: Vec2,
+}
+
 #[macroquad::main(window_conf)]
 async fn main() {
     let gravity = vec2(0.0, -30.0);
+
+    let mut drag: Option<DragState> = None;
+    let mut hover: Option<HoverState> = None;
 
     #[cfg(feature = "rapier")]
     {
@@ -194,11 +210,11 @@ async fn main() {
             break;
         }
 
-        if is_key_down(KeyCode::F2) {
+        if is_key_down(KeyCode::Key1) {
             enable_autospawn = !enable_autospawn;
         }
 
-        if is_key_down(KeyCode::F3) {
+        if is_key_down(KeyCode::Key2) {
             let blobs = sim.cast_physics::<blobs::Physics>();
 
             let joint_iterations = blobs.joint_iterations;
@@ -234,10 +250,49 @@ async fn main() {
         draw_circle(Vec2::ZERO, 4.0, WHITE.alpha(0.05));
 
         cooldowns.tick(delta);
+        // for (_, rbd) in physics.rbd_set.arena.iter() {
+        //     draw_circle(rbd.position, rbd.radius, RED);
+        // }
+
+        let (mouse_x, mouse_y) = mouse_position();
+        let _mouse_screen = vec2(mouse_x, mouse_y);
+        // Working around macroquad using different version of glam.
+        let mouse_world = camera.screen_to_world(macroquad::math::vec2(mouse_x, mouse_y));
+        let mouse_world = vec2(mouse_world.x, mouse_world.y);
+
+        let mut wants_ball = false;
+        let mut random_radius = false;
+        let position = random_around(vec2(1.0, 1.0), 0.1, 0.2);
 
         for (index, object) in sim.balls.iter() {
-            let collider = sim.physics.collider(index);
-            draw_circle(collider.position, collider.radius, object.color);
+            let collider = sim
+                .physics
+                .as_any()
+                .downcast_ref::<blobs::Physics>()
+                .unwrap()
+                .col_set
+                .arena
+                .get(index)
+                .unwrap();
+
+            let mut hovered = false;
+
+            if mouse_world.distance(collider.absolute_position) < collider.radius {
+                hovered = true;
+
+                hover = Some(HoverState {
+                    index: collider.parent.unwrap().0,
+                    position: collider.absolute_position,
+                });
+            }
+
+            let color = if hovered {
+                RED.mix(object.color, 0.2)
+            } else {
+                object.color
+            };
+
+            draw_circle(collider.absolute_position, collider.radius, color);
         }
 
         {
@@ -260,21 +315,7 @@ async fn main() {
             }
         }
 
-        // for (_, rbd) in physics.rbd_set.arena.iter() {
-        //     draw_circle(rbd.position, rbd.radius, RED);
-        // }
-
-        let (mouse_x, mouse_y) = mouse_position();
-        let _mouse_screen = vec2(mouse_x, mouse_y);
-        // Working around macroquad using different version of glam.
-        let mouse_world = camera.screen_to_world(macroquad::math::vec2(mouse_x, mouse_y));
-        let mouse_world = vec2(mouse_world.x, mouse_world.y);
-
-        let mut wants_ball = false;
-        let mut random_radius = false;
-        let mut position = random_around(vec2(1.0, 1.0), 0.1, 0.2);
-
-        draw_circle(mouse_world, 0.3, WHITE);
+        // draw_circle(mouse_world, 0.3, WHITE);
 
         // draw_circle(vec2(1.0, 1.0), 1.0, RED);
         // draw_circle(vec2(1.0, -1.0), 1.0, GREEN);
@@ -362,13 +403,25 @@ async fn main() {
                 });
 
             if !ctx.wants_pointer_input() {
-                if is_mouse_button_down(MouseButton::Left) {
-                    if cooldowns.can_use("ball", 0.005) {
-                        wants_ball = true;
-                        random_radius = true;
-                        position = mouse_world;
+                // if is_mouse_button_down(MouseButton::Left) {
+                //     if cooldowns.can_use("ball", 0.005) {
+                //         wants_ball = true;
+                //         random_radius = true;
+                //         position = mouse_world;
+                //     }
+                // }
+
+                if let Some(hover) = hover {
+                    if drag.is_none() && is_mouse_button_down(MouseButton::Left) {
+                        drag = Some(DragState {
+                            index: hover.index,
+                            start: mouse_world,
+                            offset: mouse_world - hover.position,
+                        });
                     }
                 }
+
+                if let Some(drag) = drag {}
 
                 if is_mouse_button_pressed(MouseButton::Right) {
                     random_radius = false;
