@@ -73,8 +73,10 @@ async fn main() {
         let a = sim.balls.insert(Vec2::ZERO);
         let b = sim.balls.insert(Vec2::ZERO);
 
-        spawn_rbd_entity(
-            sim.cast_physics(),
+        let blobs = sim.cast_physics();
+
+        let rbd_a = spawn_rbd_entity(
+            blobs,
             a,
             RigidBodyDesc {
                 position: vec2(3.0, 0.0),
@@ -83,8 +85,8 @@ async fn main() {
             },
         );
 
-        spawn_rbd_entity(
-            sim.cast_physics(),
+        let rbd_b = spawn_rbd_entity(
+            blobs,
             b,
             RigidBodyDesc {
                 position: vec2(-1.0, 0.0),
@@ -92,6 +94,8 @@ async fn main() {
                 ..Default::default()
             },
         );
+
+        blobs.create_fixed_joint(rbd_a, rbd_b, Vec2::ZERO, Vec2::ZERO);
     }
 
     let mut enable_autospawn = false;
