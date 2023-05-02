@@ -13,6 +13,7 @@ use macroquad::{
     },
     rand::gen_range,
     shapes::{draw_line, draw_poly},
+    texture::{draw_texture_ex, load_texture, DrawTextureParams, Texture2D},
     time::{get_fps, get_frame_time},
     window::{clear_background, next_frame, screen_height, screen_width, Conf},
 };
@@ -203,6 +204,8 @@ pub struct HoverState {
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    let texture: Texture2D = load_texture("assets/happy-tree.png").await.unwrap();
+
     let gravity = vec2(0.0, -30.0);
 
     let mut drag: Option<DragState> = None;
@@ -345,7 +348,29 @@ async fn main() {
                 object.color
             };
 
+            let rbd = blobs.get_rbd(rbd_handle).unwrap();
+
             draw_circle(collider.absolute_position, collider.radius, color);
+            let a = collider.absolute_position;
+            let b = a + vec2(rbd.rotation.cos(), rbd.rotation.sin()) * 0.4;
+            draw_line(a.x, a.y, b.x, b.y, 0.05, YELLOW);
+
+            let r = collider.radius;
+
+            draw_texture_ex(
+                texture,
+                collider.absolute_position.x - r,
+                collider.absolute_position.y - r,
+                color.alpha(0.4),
+                DrawTextureParams {
+                    dest_size: Some(macroquad::prelude::vec2(
+                        collider.radius * 2.0,
+                        collider.radius * 2.0,
+                    )),
+                    rotation: rbd.rotation,
+                    ..Default::default()
+                },
+            );
         }
 
         {

@@ -14,4 +14,6 @@ pub struct FixedJoint {
     pub anchor_b: Vec2,
     // Distance between anchor points when the joint was created
     pub distance: f32,
+
+    pub target_angle: f32,
 }

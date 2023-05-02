@@ -177,6 +177,7 @@ impl Physics {
             anchor_a,
             anchor_b,
             distance,
+            target_angle: rbd_b.rotation - rbd_a.rotation,
         };
 
         let joint_handle = JointHandle(self.joints.insert(joint));
@@ -515,21 +516,57 @@ impl Physics {
                 }
 
                 let off_by = distance - joint.distance;
-
                 let correction = off_by * delta_position / distance;
-                // let inv_mass_sum = body_a.mass.recip() + body_b.mass.recip();
 
-                // body_a.position -= body_a.mass.recip() / inv_mass_sum * correction * 0.5;
-                // body_b.position += body_b.mass.recip() / inv_mass_sum * correction * 0.5;
+                assert!(body_a.mass > 0.0);
+                assert!(body_b.mass > 0.0);
+
+                let inv_mass_sum = body_a.mass.recip() + body_b.mass.recip();
 
                 if body_a.is_static() {
-                    body_b.position -= dt * correction;
+                    body_b.position -= inv_mass_sum * correction;
                 } else if body_b.is_static() {
-                    body_a.position += dt * correction;
+                    body_a.position += inv_mass_sum * correction;
                 } else {
-                    body_a.position += dt * correction * 0.5;
-                    body_b.position -= dt * correction * 0.5;
+                    let ratio = body_a.mass.recip() / inv_mass_sum;
+
+                    body_a.position += ratio * correction;
+                    body_b.position -= (1.0 - ratio) * correction;
                 }
+
+                // let angle_correction_a =
+                //     delta_position.perp_dot(correction) / delta_position.length_squared();
+                // let angle_correction_b =
+                //     (-delta_position).perp_dot(correction) / delta_position.length_squared();
+                //
+                // assert!(angle_correction_a.is_finite());
+                // assert!(angle_correction_b.is_finite());
+
+                let angle_a = delta_position.y.atan2(delta_position.x);
+                let angle_b = -delta_position.y.atan2(-delta_position.x);
+                let angle_diff = angle_b - angle_a - joint.target_angle;
+                let rotation_correction = angle_diff * 0.5; // Adjust this value to control the stiffness of the angle correction
+
+                body_a.rotation += rotation_correction * dt;
+                body_b.rotation -= rotation_correction * dt;
+                // println!("rotations: {} {}", body_a.rotation, body_b.rotation);
+
+                // let rotation_stiffness = 10.0;
+                // let angle_diff = body_b.rotation - body_a.rotation - joint.target_angle;
+                // let torque = angle_diff * rotation_stiffness;
+                //
+                // if !body_a.is_static() {
+                //     body_a.rotation -= torque * dt;
+                // }
+                //
+                // if !body_b.is_static() {
+                //     body_b.rotation += torque * dt;
+                // }
+
+                assert!(!body_a.rotation.is_nan());
+                assert!(!body_b.rotation.is_nan());
+                assert!(!body_a.rotation.is_infinite());
+                assert!(!body_b.rotation.is_infinite());
             }
         }
     }
