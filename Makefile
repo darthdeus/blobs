@@ -6,7 +6,7 @@ default: demo
 # default: test
 
 demo:
-	cargo run --bin demo --features $(FEATURES)
+	RUST_BACKTRACE=1 cargo run --bin demo --features $(FEATURES)
 
 test:
 	cargo test

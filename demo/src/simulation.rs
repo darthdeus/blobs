@@ -91,17 +91,10 @@ impl PhysicsEngine for blobs::Physics {
     }
 }
 
-pub fn spawn_rbd_entity(
-    physics: &mut blobs::Physics,
-    id: Index,
-    desc: RigidBodyDesc,
-) -> blobs::RigidBodyHandle {
-    // let entity = world.reserve_entity();
-    // let user_data: u128 = entity.to_bits().get().into();
-    use blobs::*;
+pub fn rbd_from_desc(id: Index, desc: RigidBodyDesc) -> RigidBody {
     let user_data: u128 = id.to_bits() as u128;
 
-    let rbd = RigidBody {
+    RigidBody {
         position: desc.position,
         position_old: desc.position,
         mass: desc.mass,
@@ -118,15 +111,20 @@ pub fn spawn_rbd_entity(
         user_data,
         body_type: desc.body_type,
         collision_groups: desc.collision_groups,
-    };
+    }
+}
 
-    let rbd_handle = physics.insert_rbd(rbd);
-
-    let collider = Collider {
-        offset: Affine2::IDENTITY,
+pub fn collider_from_desc(
+    id: Index,
+    parent: RigidBodyHandle,
+    offset: Affine2,
+    desc: RigidBodyDesc,
+) -> Collider {
+    Collider {
+        offset,
         absolute_transform: Affine2::from_translation(desc.position),
-        user_data,
-        parent: Some(rbd_handle),
+        user_data: id.to_bits() as u128,
+        parent: Some(parent),
         radius: desc.radius,
         flags: ColliderFlags {
             is_sensor: desc.is_sensor,
@@ -135,7 +133,22 @@ pub fn spawn_rbd_entity(
         shape: Box::new(Ball {
             radius: desc.radius,
         }),
-    };
+    }
+}
+
+pub fn spawn_rbd_entity(
+    physics: &mut blobs::Physics,
+    id: Index,
+    desc: RigidBodyDesc,
+) -> blobs::RigidBodyHandle {
+    // let entity = world.reserve_entity();
+    let rbd = rbd_from_desc(id, desc);
+
+    let rbd_handle = physics.insert_rbd(rbd);
+
+    let collider = collider_from_desc(id, rbd_handle, Affine2::IDENTITY, desc);
+
+    physics.insert_collider_with_parent(collider, rbd_handle);
 
     // let collider = ColliderBuilder::ball(size)
     //     .user_data(user_data)
@@ -145,8 +158,6 @@ pub fn spawn_rbd_entity(
     //             | ActiveCollisionTypes::KINEMATIC_KINEMATIC,
     //     )
     //     .collision_groups(collision_groups);
-
-    physics.insert_collider_with_parent(collider, rbd_handle);
 
     rbd_handle
 }

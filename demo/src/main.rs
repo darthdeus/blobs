@@ -134,18 +134,58 @@ fn make_world(gravity: Vec2) -> Simulation {
     spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
 
     {
+        let id = sim.balls.insert(TestObject {
+            position: Vec2::ZERO,
+            color: PINK,
+        });
+
+        let blobs = sim.cast_physics::<blobs::Physics>();
+
+        let desc = RigidBodyDesc {
+            position: vec2(-4.0, -1.0),
+            radius: 0.4,
+            // gravity_mod: 0.0,
+            ..Default::default()
+        };
+
+        let rbd = rbd_from_desc(id, desc);
+
+        let rbd_handle = blobs.insert_rbd(rbd);
+
+        blobs.insert_collider_with_parent(
+            collider_from_desc(
+                id,
+                rbd_handle,
+                Affine2::from_translation(vec2(0.0, 0.0)),
+                desc,
+            ),
+            rbd_handle,
+        );
+
+        blobs.insert_collider_with_parent(
+            collider_from_desc(
+                id,
+                rbd_handle,
+                Affine2::from_translation(vec2(1.0, 0.0)),
+                desc,
+            ),
+            rbd_handle,
+        );
+    }
+
+    {
         let a = sim.balls.insert(TestObject {
             position: Vec2::ZERO,
             color: YELLOW,
         });
-
+    
         let b = sim.balls.insert(TestObject {
             position: Vec2::ZERO,
             color: GREEN,
         });
-
+    
         let blobs = sim.cast_physics();
-
+    
         let rbd_a = spawn_rbd_entity(
             blobs,
             a,
@@ -155,7 +195,7 @@ fn make_world(gravity: Vec2) -> Simulation {
                 ..Default::default()
             },
         );
-
+    
         let rbd_b = spawn_rbd_entity(
             blobs,
             b,
@@ -165,7 +205,7 @@ fn make_world(gravity: Vec2) -> Simulation {
                 ..Default::default()
             },
         );
-
+    
         blobs.create_fixed_joint(rbd_a, rbd_b, Vec2::ZERO, Vec2::ZERO);
     }
 

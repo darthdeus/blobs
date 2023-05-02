@@ -206,6 +206,11 @@ impl Physics {
                     continue;
                 }
 
+                // Colliders share a rigid body
+                if parent_a == parent_b {
+                    continue;
+                }
+
                 let mut axis = col_a.absolute_translation() - col_b.absolute_translation();
                 let mut distance = axis.length();
 
