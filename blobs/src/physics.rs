@@ -93,11 +93,11 @@ impl Physics {
 
     pub fn insert_rbd(&mut self, rbd: RigidBody) -> RigidBodyHandle {
         let position = rbd.position;
-        let radius = rbd.radius;
+        // let radius = rbd.radius;
 
         let handle = self.rbd_set.insert(rbd);
         self.spatial_hash
-            .insert_with_id(handle.0.to_bits(), position, radius);
+            .insert_with_id(handle.0.to_bits(), position, 0.5);
         handle
     }
 
@@ -225,8 +225,10 @@ impl Physics {
                         rbd_a.position += push_out;
                         rbd_b.position -= push_out;
 
-                        col_a.absolute_transform.translation = rbd_a.position + col_a.offset.translation;
-                        col_b.absolute_transform.translation = rbd_b.position + col_b.offset.translation;
+                        col_a.absolute_transform.translation =
+                            rbd_a.position + col_a.offset.translation;
+                        col_b.absolute_transform.translation =
+                            rbd_b.position + col_b.offset.translation;
 
                         // Recalculate axis and distance
                         axis = col_a.absolute_translation() - col_b.absolute_translation();
@@ -394,9 +396,12 @@ impl Physics {
                 let to_obj = body.position - obj;
                 let dist = to_obj.length();
 
-                if dist > (radius - body.radius) {
+                // let diff = radius - body.radius;
+                let diff = radius;
+
+                if dist > diff {
                     let n = to_obj / dist;
-                    body.position = obj + n * (radius - body.radius);
+                    body.position = obj + n * diff;
                 }
             }
         }

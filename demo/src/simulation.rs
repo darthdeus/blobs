@@ -23,7 +23,7 @@ impl Simulation {
     }
 
     pub fn collider_count(&self) -> usize {
-        self.physics.collider_count()
+        self.physics.col_set.len()
     }
 
     pub fn spawn_ball(&mut self, desc: RigidBodyDesc, color: Color) {
@@ -31,65 +31,53 @@ impl Simulation {
             position: Vec2::ZERO,
             color,
         });
-        self.physics.spawn_ball(id, desc);
-    }
-
-    pub fn cast_physics(&mut self) -> &mut blobs::Physics {
-        self.physics.as_any().downcast_mut().unwrap()
+        spawn_rbd_entity(&mut self.physics, id, desc);
     }
 }
 
-pub trait PhysicsEngine {
-    fn as_any(&mut self) -> &mut dyn Any;
-    fn step(&mut self, delta: f64);
+// pub trait PhysicsEngine {
+//     fn as_any(&mut self) -> &mut dyn Any;
+//     fn step(&mut self, delta: f64);
+//
+//     fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc);
+//     fn collider_count(&self) -> usize;
+// }
 
-    fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc);
-    fn collider_count(&self) -> usize;
-
-    // fn colliders(&self) -> impl Iterator<Item = (Vec2, f32)>;
-    fn colliders(&self) -> Vec<(Vec2, f32)>;
-    fn collider(&self, index: Index) -> SimpleCollider;
-}
-
-pub struct SimpleCollider {
-    pub position: Vec2,
-    pub radius: f32,
-}
-
-impl PhysicsEngine for blobs::Physics {
-    fn as_any(&mut self) -> &mut dyn Any {
-        self
-    }
-
-    fn step(&mut self, delta: f64) {
-        self.fixed_step(delta);
-    }
-
-    fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc) {
-        spawn_rbd_entity(self, id, desc);
-    }
-
-    fn collider_count(&self) -> usize {
-        self.col_set.arena.len()
-    }
-
-    fn colliders(&self) -> Vec<(Vec2, f32)> {
-        self.rbd_set
-            .arena
-            .iter()
-            .map(|(_, x)| (x.position, x.radius))
-            .collect()
-    }
-
-    fn collider(&self, index: Index) -> SimpleCollider {
-        let collider = self.col_set.arena.get(index).unwrap();
-
-        SimpleCollider {
-            position: collider.absolute_translation(),
-            radius: collider.radius,
-        }
-    }
-}
+// fn collider(&self, index: Index) -> SimpleCollider;
+// impl PhysicsEngine for blobs::Physics {
+//     fn as_any(&mut self) -> &mut dyn Any {
+//         self
+//     }
+//
+//     fn step(&mut self, delta: f64) {
+//         self.fixed_step(delta);
+//     }
+//
+//     fn spawn_ball(&mut self, id: Index, desc: RigidBodyDesc) {
+//         spawn_rbd_entity(self, id, desc);
+//     }
+//
+//     fn collider_count(&self) -> usize {
+//         self.col_set.arena.len()
+//     }
+//
+//     fn colliders(&self) -> Vec<(Vec2, f32)> {
+//         self.rbd_set
+//             .arena
+//             .iter()
+//             .map(|(_, x)| (x.position, x.radius))
+//             .collect()
+//     }
+//
+//     fn collider(&self, index: Index) -> SimpleCollider {
+//         let collider = self.col_set.arena.get(index).unwrap();
+//
+//         SimpleCollider {
+//             position: collider.absolute_translation(),
+//             radius: collider.radius,
+//         }
+//     }
+// }
 
 pub fn rbd_from_desc(id: Index, desc: RigidBodyDesc) -> RigidBody {
     let user_data: u128 = id.to_bits() as u128;
@@ -104,7 +92,6 @@ pub fn rbd_from_desc(id: Index, desc: RigidBodyDesc) -> RigidBody {
         acceleration: Vec2::ZERO,
         rotation: 0.0,
         scale: Vec2::ONE,
-        radius: desc.radius,
         // angular_velocity: 0.0,
         colliders: vec![],
         connected_joints: vec![],

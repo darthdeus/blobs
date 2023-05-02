@@ -1,5 +1,4 @@
 use blobs::{perf_counters::perf_counters_new_frame, *};
-use std::any::Any;
 use thunderdome::{Arena, Index};
 
 use glam::*;
@@ -69,10 +68,8 @@ fn make_world(gravity: Vec2) -> Simulation {
                 color: YELLOW,
             });
 
-            let blobs = sim.cast_physics();
-
             let rbd_handle = spawn_rbd_entity(
-                blobs,
+                &mut sim.physics,
                 idx,
                 RigidBodyDesc {
                     position: vec2(x as f32 * spacing, y as f32 * spacing) + offset,
@@ -86,15 +83,15 @@ fn make_world(gravity: Vec2) -> Simulation {
         });
 
         for (x, y, (_, rbd_handle_a)) in grid.iter() {
-            let blobs = sim.cast_physics();
-
             if x < grid.width() - 1 {
                 let rbd_handle_b = grid[(x + 1, y)].1;
-                blobs.create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
+                sim.physics
+                    .create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
             }
             if y < grid.width() - 1 {
                 let rbd_handle_b = grid[(x, y + 1)].1;
-                blobs.create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
+                sim.physics
+                    .create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
             }
         }
 
@@ -103,10 +100,8 @@ fn make_world(gravity: Vec2) -> Simulation {
             color: ORANGE,
         });
 
-        let blobs = sim.cast_physics();
-
         let cloth_pin = spawn_rbd_entity(
-            blobs,
+            &mut sim.physics,
             a,
             RigidBodyDesc {
                 position: vec2(0.0, 3.5),
@@ -127,7 +122,13 @@ fn make_world(gravity: Vec2) -> Simulation {
         //     damping: 50.0,
         // });
 
-        blobs.create_fixed_joint_with_distance(grid_anchor, cloth_pin, Vec2::ZERO, Vec2::ZERO, 0.1);
+        sim.physics.create_fixed_joint_with_distance(
+            grid_anchor,
+            cloth_pin,
+            Vec2::ZERO,
+            Vec2::ZERO,
+            0.1,
+        );
     }
 
     spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
@@ -139,8 +140,6 @@ fn make_world(gravity: Vec2) -> Simulation {
             color: PINK,
         });
 
-        let blobs = sim.cast_physics();
-
         let desc = RigidBodyDesc {
             position: vec2(-4.0, -1.0),
             radius: 0.4,
@@ -150,9 +149,9 @@ fn make_world(gravity: Vec2) -> Simulation {
 
         let rbd = rbd_from_desc(id, desc);
 
-        let rbd_handle = blobs.insert_rbd(rbd);
+        let rbd_handle = sim.physics.insert_rbd(rbd);
 
-        blobs.insert_collider_with_parent(
+        sim.physics.insert_collider_with_parent(
             collider_from_desc(
                 id,
                 rbd_handle,
@@ -162,7 +161,7 @@ fn make_world(gravity: Vec2) -> Simulation {
             rbd_handle,
         );
 
-        blobs.insert_collider_with_parent(
+        sim.physics.insert_collider_with_parent(
             collider_from_desc(
                 id,
                 rbd_handle,
@@ -184,10 +183,8 @@ fn make_world(gravity: Vec2) -> Simulation {
             color: GREEN,
         });
 
-        let blobs = sim.cast_physics();
-
         let rbd_a = spawn_rbd_entity(
-            blobs,
+            &mut sim.physics,
             a,
             RigidBodyDesc {
                 position: vec2(3.0, 0.0),
@@ -197,7 +194,7 @@ fn make_world(gravity: Vec2) -> Simulation {
         );
 
         let rbd_b = spawn_rbd_entity(
-            blobs,
+            &mut sim.physics,
             b,
             RigidBodyDesc {
                 position: vec2(-3.0, 0.0),
@@ -206,7 +203,8 @@ fn make_world(gravity: Vec2) -> Simulation {
             },
         );
 
-        blobs.create_fixed_joint(rbd_a, rbd_b, Vec2::ZERO, Vec2::ZERO);
+        sim.physics
+            .create_fixed_joint(rbd_a, rbd_b, Vec2::ZERO, Vec2::ZERO);
     }
 
     sim
@@ -215,10 +213,8 @@ fn make_world(gravity: Vec2) -> Simulation {
 fn spawn_body(sim: &mut Simulation, position: Vec2, color: Color) -> RigidBodyHandle {
     let a = sim.balls.insert(TestObject { position, color });
 
-    let blobs = sim.cast_physics();
-
     spawn_rbd_entity(
-        blobs,
+        &mut sim.physics,
         a,
         RigidBodyDesc {
             position,
@@ -263,10 +259,8 @@ async fn main() {
         color: PINK,
     });
 
-    let blobs = sim.cast_physics();
-
     let mouse_rbd = spawn_rbd_entity(
-        blobs,
+        &mut sim.physics,
         a,
         RigidBodyDesc {
             position: Vec2::ZERO,

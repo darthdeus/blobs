@@ -30,7 +30,6 @@ pub struct RigidBody {
     pub scale: Vec2,
 
     pub acceleration: Vec2,
-    pub radius: f32,
 
     pub velocity_request: Option<Vec2>,
     pub calculated_velocity: Vec2,
