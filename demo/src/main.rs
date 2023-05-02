@@ -349,83 +349,105 @@ async fn main() {
         let mut random_radius = false;
         let position = random_around(vec2(1.0, 1.0), 0.1, 0.2);
 
-        for (index, object) in sim.balls.iter() {
-            let collider = sim.physics.col_set.arena.get(index).unwrap();
-            let rbd_handle = collider.parent.unwrap();
+        // for (index, object) in sim.balls.iter() {
+        //     let collider = sim.physics.col_set.arena.get(index).unwrap();
+        //     let rbd_handle = collider.parent.unwrap();
+        //
+        //     let mut hovered = false;
+        //
+        //     if mouse_rbd != rbd_handle {
+        //         if mouse_world.distance(collider.absolute_translation()) < collider.radius {
+        //             hovered = true;
+        //
+        //             hover = Some(HoverState {
+        //                 index: rbd_handle,
+        //                 position: collider.absolute_translation(),
+        //             });
+        //         }
+        //     }
+        //
+        //     let color = if hovered {
+        //         RED.mix(object.color, 0.2)
+        //     } else {
+        //         object.color
+        //     };
+        //
+        //     let rbd = sim.physics.get_rbd(rbd_handle).unwrap();
+        //
+        //     draw_circle(collider.absolute_translation(), collider.radius, color);
+        //     let a = collider.absolute_translation();
+        //     let b = a + vec2(rbd.rotation.cos(), rbd.rotation.sin()) * 0.4;
+        //     draw_line(a.x, a.y, b.x, b.y, 0.05, YELLOW);
+        //
+        //     let r = collider.radius;
+        //
+        //     draw_texture_ex(
+        //         texture,
+        //         collider.absolute_translation().x - r,
+        //         collider.absolute_translation().y - r,
+        //         color.alpha(0.4),
+        //         DrawTextureParams {
+        //             dest_size: Some(macroquad::prelude::vec2(
+        //                 collider.radius * 2.0,
+        //                 collider.radius * 2.0,
+        //             )),
+        //             rotation: rbd.rotation,
+        //             ..Default::default()
+        //         },
+        //     );
+        // }
 
-            let mut hovered = false;
+        let debug = sim.physics.debug_data();
 
-            if mouse_rbd != rbd_handle {
-                if mouse_world.distance(collider.absolute_translation()) < collider.radius {
-                    hovered = true;
+        for collider in debug.colliders.iter() {
+            draw_circle(collider.transform.translation, collider.radius, BLUE);
 
-                    hover = Some(HoverState {
-                        index: rbd_handle,
-                        position: collider.absolute_translation(),
-                    });
-                }
-            }
-
-            let color = if hovered {
-                RED.mix(object.color, 0.2)
-            } else {
-                object.color
-            };
-
-            let rbd = sim.physics.get_rbd(rbd_handle).unwrap();
-
-            draw_circle(collider.absolute_translation(), collider.radius, color);
-            let a = collider.absolute_translation();
-            let b = a + vec2(rbd.rotation.cos(), rbd.rotation.sin()) * 0.4;
-            draw_line(a.x, a.y, b.x, b.y, 0.05, YELLOW);
-
+            let up = vec2(0.0, 1.0);
+            let angle = collider.transform.transform_vector2(up).angle_between(up);
             let r = collider.radius;
+
+            let a = collider.transform.translation;
+            let b = a + vec2(angle.cos(), angle.sin()) * r;
 
             draw_texture_ex(
                 texture,
-                collider.absolute_translation().x - r,
-                collider.absolute_translation().y - r,
-                color.alpha(0.4),
+                collider.transform.translation.x - r,
+                collider.transform.translation.y - r,
+                BLUE.alpha(0.4),
                 DrawTextureParams {
-                    dest_size: Some(macroquad::prelude::vec2(
-                        collider.radius * 2.0,
-                        collider.radius * 2.0,
-                    )),
-                    rotation: rbd.rotation,
+                    dest_size: Some(macroquad::prelude::vec2(r * 2.0, r * 2.0)),
+                    rotation: angle,
                     ..Default::default()
                 },
             );
+
+            draw_line(a.x, a.y, b.x, b.y, 0.05, DARKBLUE);
         }
 
-        {
-            for (_, spring) in sim.physics.springs.iter() {
-                let rbd_set = &sim.physics.rbd_set;
-
-                let a = rbd_set.get(spring.rigid_body_a).unwrap().position;
-                let b = rbd_set.get(spring.rigid_body_b).unwrap().position;
-
-                draw_line(a.x, a.y, b.x, b.y, 0.1, BLUE);
-            }
+        for body in debug.bodies.iter() {
+            draw_circle(body.transform.translation, 0.05, PINK.alpha(0.5));
         }
 
-        {
-            for (_, joint) in sim.physics.joints.iter() {
-                let (rbd_a, rbd_b) = sim
-                    .physics
-                    .rbd_set
-                    .arena
-                    .get2_mut(joint.rigid_body_a.0, joint.rigid_body_b.0)
-                    .zip_unwrap();
+        for spring in debug.springs.iter() {
+            draw_line(
+                spring.body_a.x,
+                spring.body_a.y,
+                spring.body_b.x,
+                spring.body_b.y,
+                0.1,
+                BLUE,
+            );
+        }
 
-                draw_line(
-                    rbd_a.position.x,
-                    rbd_a.position.y,
-                    rbd_b.position.x,
-                    rbd_b.position.y,
-                    0.05,
-                    YELLOW.alpha(0.5),
-                );
-            }
+        for joint in debug.joints.iter() {
+            draw_line(
+                joint.body_a.x,
+                joint.body_a.y,
+                joint.body_b.x,
+                joint.body_b.y,
+                0.05,
+                YELLOW.alpha(0.5),
+            );
         }
 
         // draw_circle(mouse_world, 0.3, WHITE);

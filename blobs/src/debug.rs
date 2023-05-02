@@ -5,6 +5,7 @@ pub struct DebugData {
     pub bodies: Vec<DebugRigidBody>,
     pub joints: Vec<DebugJoint>,
     pub colliders: Vec<DebugCollider>,
+    pub springs: Vec<DebugSpring>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -22,6 +23,12 @@ pub struct DebugJoint {
 pub struct DebugCollider {
     pub transform: Affine2,
     pub radius: f32,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct DebugSpring {
+    pub body_a: Vec2,
+    pub body_b: Vec2,
 }
 
 pub(crate) fn make_debug_data(physics: &Physics) -> DebugData {
@@ -65,9 +72,20 @@ pub(crate) fn make_debug_data(physics: &Physics) -> DebugData {
         })
         .collect();
 
+    let springs = physics
+        .springs
+        .iter()
+        .map(|(_, spring)| {
+            let body_a = physics.rbd_set.arena[*spring.rigid_body_a].position;
+            let body_b = physics.rbd_set.arena[*spring.rigid_body_b].position;
+            DebugSpring { body_a, body_b }
+        })
+        .collect();
+
     DebugData {
         bodies,
         joints,
         colliders,
+        springs,
     }
 }
