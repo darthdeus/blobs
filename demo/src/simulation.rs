@@ -7,11 +7,11 @@ pub struct TestObject {
 
 pub struct Simulation {
     pub balls: Arena<TestObject>,
-    pub physics: Box<dyn PhysicsEngine>,
+    pub physics: Physics,
 }
 
 impl Simulation {
-    pub fn new(physics: Box<dyn PhysicsEngine>) -> Self {
+    pub fn new(physics: Physics) -> Self {
         Self {
             balls: Arena::new(),
             physics,
@@ -34,7 +34,7 @@ impl Simulation {
         self.physics.spawn_ball(id, desc);
     }
 
-    pub fn cast_physics<T: 'static>(&mut self) -> &mut T {
+    pub fn cast_physics(&mut self) -> &mut blobs::Physics {
         self.physics.as_any().downcast_mut().unwrap()
     }
 }

@@ -53,7 +53,7 @@ fn make_world(gravity: Vec2) -> Simulation {
         radius: 4.0,
     });
 
-    let mut sim = Simulation::new(Box::new(blob_physics));
+    let mut sim = Simulation::new(blob_physics);
 
     {
         let spacing = 0.3;
@@ -86,7 +86,7 @@ fn make_world(gravity: Vec2) -> Simulation {
         });
 
         for (x, y, (_, rbd_handle_a)) in grid.iter() {
-            let blobs = sim.cast_physics::<blobs::Physics>();
+            let blobs = sim.cast_physics();
 
             if x < grid.width() - 1 {
                 let rbd_handle_b = grid[(x + 1, y)].1;
@@ -139,7 +139,7 @@ fn make_world(gravity: Vec2) -> Simulation {
             color: PINK,
         });
 
-        let blobs = sim.cast_physics::<blobs::Physics>();
+        let blobs = sim.cast_physics();
 
         let desc = RigidBodyDesc {
             position: vec2(-4.0, -1.0),
@@ -178,14 +178,14 @@ fn make_world(gravity: Vec2) -> Simulation {
             position: Vec2::ZERO,
             color: YELLOW,
         });
-    
+
         let b = sim.balls.insert(TestObject {
             position: Vec2::ZERO,
             color: GREEN,
         });
-    
+
         let blobs = sim.cast_physics();
-    
+
         let rbd_a = spawn_rbd_entity(
             blobs,
             a,
@@ -195,7 +195,7 @@ fn make_world(gravity: Vec2) -> Simulation {
                 ..Default::default()
             },
         );
-    
+
         let rbd_b = spawn_rbd_entity(
             blobs,
             b,
@@ -205,7 +205,7 @@ fn make_world(gravity: Vec2) -> Simulation {
                 ..Default::default()
             },
         );
-    
+
         blobs.create_fixed_joint(rbd_a, rbd_b, Vec2::ZERO, Vec2::ZERO);
     }
 
@@ -310,17 +310,13 @@ async fn main() {
         }
 
         if is_key_down(KeyCode::Key3) {
-            let blobs = sim.cast_physics::<blobs::Physics>();
-
-            let joint_iterations = blobs.joint_iterations;
-            let substeps = blobs.substeps;
+            let joint_iterations = sim.physics.joint_iterations;
+            let substeps = sim.physics.substeps;
 
             sim = make_world(gravity);
 
-            let blobs = sim.cast_physics::<blobs::Physics>();
-
-            blobs.joint_iterations = joint_iterations;
-            blobs.substeps = substeps;
+            sim.physics.joint_iterations = joint_iterations;
+            sim.physics.substeps = substeps;
         }
 
         if is_key_pressed(KeyCode::Q) {
@@ -360,13 +356,7 @@ async fn main() {
         let position = random_around(vec2(1.0, 1.0), 0.1, 0.2);
 
         for (index, object) in sim.balls.iter() {
-            let blobs = sim
-                .physics
-                .as_any()
-                .downcast_ref::<blobs::Physics>()
-                .unwrap();
-
-            let collider = blobs.col_set.arena.get(index).unwrap();
+            let collider = sim.physics.col_set.arena.get(index).unwrap();
             let rbd_handle = collider.parent.unwrap();
 
             let mut hovered = false;
@@ -388,7 +378,7 @@ async fn main() {
                 object.color
             };
 
-            let rbd = blobs.get_rbd(rbd_handle).unwrap();
+            let rbd = sim.physics.get_rbd(rbd_handle).unwrap();
 
             draw_circle(collider.absolute_translation(), collider.radius, color);
             let a = collider.absolute_translation();
@@ -414,14 +404,8 @@ async fn main() {
         }
 
         {
-            let blobs = sim
-                .physics
-                .as_any()
-                .downcast_ref::<blobs::Physics>()
-                .unwrap();
-
-            for (_, spring) in blobs.springs.iter() {
-                let rbd_set = &blobs.rbd_set;
+            for (_, spring) in sim.physics.springs.iter() {
+                let rbd_set = &sim.physics.rbd_set;
 
                 let a = rbd_set.get(spring.rigid_body_a).unwrap().position;
                 let b = rbd_set.get(spring.rigid_body_b).unwrap().position;
@@ -431,9 +415,9 @@ async fn main() {
         }
 
         {
-            let blobs = sim.cast_physics::<blobs::Physics>();
-            for (_, joint) in blobs.joints.iter() {
-                let (rbd_a, rbd_b) = blobs
+            for (_, joint) in sim.physics.joints.iter() {
+                let (rbd_a, rbd_b) = sim
+                    .physics
                     .rbd_set
                     .arena
                     .get2_mut(joint.rigid_body_a.0, joint.rigid_body_b.0)
@@ -461,16 +445,14 @@ async fn main() {
             ctx.set_pixels_per_point(1.5);
 
             egui::Window::new("Physics Parameters").show(ctx, |ui| {
-                let blobs = sim.cast_physics::<blobs::Physics>();
-
                 ui.horizontal(|ui| {
                     ui.label("substeps");
-                    ui.add(egui::DragValue::new(&mut blobs.substeps));
+                    ui.add(egui::DragValue::new(&mut sim.physics.substeps));
                 });
 
                 ui.horizontal(|ui| {
                     ui.label("joint iterations");
-                    ui.add(egui::DragValue::new(&mut blobs.joint_iterations));
+                    ui.add(egui::DragValue::new(&mut sim.physics.joint_iterations));
                 });
             });
 
@@ -483,8 +465,8 @@ async fn main() {
 
                     ui.separator();
 
-                    if sim.body_count() > 0 {
-                        ui.label(format!("Rigid Bodies: {}", sim.body_count()));
+                    if sim.physics.rbd_set.len() > 0 {
+                        ui.label(format!("Rigid Bodies: {}", sim.physics.rbd_set.len()));
                         ui.label(format!("Colliders: {}", sim.collider_count()));
 
                         ui.separator();
@@ -548,7 +530,7 @@ async fn main() {
 
                 if let Some(hover) = hover {
                     if drag.is_none() && is_mouse_button_pressed(MouseButton::Left) {
-                        let spring = sim.cast_physics::<blobs::Physics>().springs.insert(Spring {
+                        let spring = sim.physics.springs.insert(Spring {
                             rigid_body_a: hover.index,
                             rigid_body_b: mouse_rbd,
                             rest_length: 1.0,
@@ -567,19 +549,13 @@ async fn main() {
 
                 if is_mouse_button_released(MouseButton::Left) {
                     if let Some(drag) = drag {
-                        sim.cast_physics::<blobs::Physics>()
-                            .springs
-                            .remove(*drag.spring);
+                        sim.physics.springs.remove(*drag.spring);
                     }
 
                     drag = None;
                 }
 
-                sim.cast_physics::<blobs::Physics>()
-                    .rbd_set
-                    .get_mut(mouse_rbd)
-                    .unwrap()
-                    .position = mouse_world;
+                sim.physics.rbd_set.get_mut(mouse_rbd).unwrap().position = mouse_world;
 
                 if let Some(_drag) = drag {
                     if is_mouse_button_down(MouseButton::Left) {
