@@ -145,12 +145,38 @@ impl Physics {
             .zip()
             .unwrap();
 
+        let distance = (rbd_a.position + anchor_a - rbd_b.position - anchor_b).length();
+
+        self.create_fixed_joint_with_distance(
+            rbd_handle_a,
+            rbd_handle_b,
+            anchor_a,
+            anchor_b,
+            distance,
+        )
+    }
+
+    pub fn create_fixed_joint_with_distance(
+        &mut self,
+        rbd_handle_a: RigidBodyHandle,
+        rbd_handle_b: RigidBodyHandle,
+        anchor_a: Vec2,
+        anchor_b: Vec2,
+        distance: f32,
+    ) -> JointHandle {
+        let (rbd_a, rbd_b) = self
+            .rbd_set
+            .arena
+            .get2_mut(rbd_handle_a.0, rbd_handle_b.0)
+            .zip()
+            .unwrap();
+
         let joint = FixedJoint {
             rigid_body_a: rbd_handle_a,
             rigid_body_b: rbd_handle_b,
             anchor_a,
             anchor_b,
-            distance: (rbd_a.position + anchor_a - rbd_b.position - anchor_b).length(),
+            distance,
         };
 
         let joint_handle = JointHandle(self.joints.insert(joint));

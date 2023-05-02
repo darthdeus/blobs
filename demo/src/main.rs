@@ -108,7 +108,7 @@ fn make_world(gravity: Vec2) -> Simulation {
             blobs,
             a,
             RigidBodyDesc {
-                position: Vec2::ZERO,
+                position: vec2(0.0, 3.5),
                 body_type: RigidBodyType::Static,
                 collision_groups: groups(0, 0),
                 // gravity_mod: 0.0,
@@ -118,15 +118,15 @@ fn make_world(gravity: Vec2) -> Simulation {
 
         let grid_anchor = grid[(5, 0)].1;
 
-        let spring = blobs.springs.insert(Spring {
-            rigid_body_a: grid_anchor,
-            rigid_body_b: cloth_pin,
-            rest_length: 1.0,
-            stiffness: 3000.0,
-            damping: 50.0,
-        });
+        // let spring = blobs.springs.insert(Spring {
+        //     rigid_body_a: grid_anchor,
+        //     rigid_body_b: cloth_pin,
+        //     rest_length: 1.0,
+        //     stiffness: 3000.0,
+        //     damping: 50.0,
+        // });
 
-        // blobs.create_fixed_joint(grid_anchor, cloth_pin, Vec2::ZERO, Vec2::ZERO);
+        blobs.create_fixed_joint_with_distance(grid_anchor, cloth_pin, Vec2::ZERO, Vec2::ZERO, 0.1);
     }
 
     spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
