@@ -332,12 +332,12 @@ async fn main() {
             let mut hovered = false;
 
             if mouse_rbd != rbd_handle {
-                if mouse_world.distance(collider.translation()) < collider.radius {
+                if mouse_world.distance(collider.absolute_translation()) < collider.radius {
                     hovered = true;
 
                     hover = Some(HoverState {
                         index: rbd_handle,
-                        position: collider.translation(),
+                        position: collider.absolute_translation(),
                     });
                 }
             }
@@ -350,8 +350,8 @@ async fn main() {
 
             let rbd = blobs.get_rbd(rbd_handle).unwrap();
 
-            draw_circle(collider.translation(), collider.radius, color);
-            let a = collider.translation();
+            draw_circle(collider.absolute_translation(), collider.radius, color);
+            let a = collider.absolute_translation();
             let b = a + vec2(rbd.rotation.cos(), rbd.rotation.sin()) * 0.4;
             draw_line(a.x, a.y, b.x, b.y, 0.05, YELLOW);
 
@@ -359,8 +359,8 @@ async fn main() {
 
             draw_texture_ex(
                 texture,
-                collider.translation().x - r,
-                collider.translation().y - r,
+                collider.absolute_translation().x - r,
+                collider.absolute_translation().y - r,
                 color.alpha(0.4),
                 DrawTextureParams {
                     dest_size: Some(macroquad::prelude::vec2(

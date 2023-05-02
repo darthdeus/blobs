@@ -18,7 +18,11 @@ pub struct Collider {
 }
 
 impl Collider {
-    pub fn translation(&self) -> Vec2 {
+    pub fn relative_translation(&self) -> Vec2 {
+        self.offset.translation
+    }
+
+    pub fn absolute_translation(&self) -> Vec2 {
         self.absolute_transform.translation
     }
 

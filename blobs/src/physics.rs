@@ -206,7 +206,7 @@ impl Physics {
                     continue;
                 }
 
-                let mut axis = col_a.translation() - col_b.translation();
+                let mut axis = col_a.absolute_translation() - col_b.absolute_translation();
                 let mut distance = axis.length();
 
                 let min_dist = col_a.radius + col_b.radius;
@@ -224,7 +224,7 @@ impl Physics {
                         col_b.absolute_transform.translation = rbd_b.position + col_b.offset.translation;
 
                         // Recalculate axis and distance
-                        axis = col_a.translation() - col_b.translation();
+                        axis = col_a.absolute_translation() - col_b.absolute_translation();
                         distance = axis.length();
                     }
 
@@ -290,7 +290,7 @@ impl Physics {
                         continue;
                     }
 
-                    let axis = col_a.translation() - col_b.translation();
+                    let axis = col_a.absolute_translation() - col_b.absolute_translation();
                     let distance = axis.length();
                     let min_dist = col_a.radius + col_b.radius;
 

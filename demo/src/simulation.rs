@@ -85,7 +85,7 @@ impl PhysicsEngine for blobs::Physics {
         let collider = self.col_set.arena.get(index).unwrap();
 
         SimpleCollider {
-            position: collider.translation(),
+            position: collider.absolute_translation(),
             radius: collider.radius,
         }
     }
