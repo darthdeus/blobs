@@ -288,7 +288,7 @@ async fn main() {
             let start = instant::now();
 
             if frame_index > 20 {
-                sim.physics.step(delta as f64);
+                sim.physics.fixed_step(delta as f64);
             }
 
             let end = instant::now();

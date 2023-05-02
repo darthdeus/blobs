@@ -22,6 +22,14 @@ impl Collider {
         self.offset.translation
     }
 
+    pub fn absolute_rotation(&self) -> f32 {
+        let up = vec2(0.0, 1.0);
+
+        self.absolute_transform
+            .transform_vector2(up)
+            .angle_between(up)
+    }
+
     pub fn absolute_translation(&self) -> Vec2 {
         self.absolute_transform.translation
     }
