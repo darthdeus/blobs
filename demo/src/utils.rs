@@ -163,6 +163,7 @@ pub struct RigidBodyDesc {
     pub is_sensor: bool,
     pub gravity_mod: f32,
     pub collision_groups: blobs::InteractionGroups,
+    pub body_type: RigidBodyType,
 }
 
 impl Default for RigidBodyDesc {
@@ -175,6 +176,7 @@ impl Default for RigidBodyDesc {
             is_sensor: false,
             gravity_mod: 1.0,
             collision_groups: blobs::InteractionGroups::default(),
+            body_type: RigidBodyType::Dynamic,
         }
     }
 }

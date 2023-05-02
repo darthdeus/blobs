@@ -317,6 +317,13 @@ impl Physics {
         let _span = tracy_span!("update positions");
 
         for (idx, body) in self.rbd_set.arena.iter_mut() {
+            if body.is_static() {
+                body.position_old = body.position;
+                body.acceleration = Vec2::ZERO;
+                body.calculated_velocity = Vec2::ZERO;
+                continue;
+            }
+
             if let Some(req_velocity) = body.velocity_request.take() {
                 body.position_old = body.position - req_velocity * delta;
             }
@@ -330,7 +337,6 @@ impl Physics {
             body.position += displacement + body.acceleration * delta * delta;
 
             body.acceleration = Vec2::ZERO;
-
             body.calculated_velocity = displacement / delta;
         }
 
@@ -345,7 +351,9 @@ impl Physics {
 
     fn apply_gravity(&mut self) {
         for (_, body) in self.rbd_set.arena.iter_mut() {
-            body.accelerate(self.gravity * body.gravity_mod);
+            if !body.is_static() {
+                body.accelerate(self.gravity * body.gravity_mod);
+            }
         }
     }
 
@@ -481,8 +489,6 @@ impl Physics {
                 }
 
                 let off_by = distance - joint.distance;
-
-                // println!("off_by: {} ... {}", off_by, delta_position.length());
 
                 let correction = off_by * delta_position / distance;
                 // let inv_mass_sum = body_a.mass.recip() + body_b.mass.recip();

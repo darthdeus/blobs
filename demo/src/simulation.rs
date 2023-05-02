@@ -116,7 +116,7 @@ pub fn spawn_rbd_entity(
         colliders: vec![],
         connected_joints: vec![],
         user_data,
-        body_type: RigidBodyType::KinematicVelocityBased,
+        body_type: desc.body_type,
         collision_groups: desc.collision_groups,
     };
 

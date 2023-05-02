@@ -184,6 +184,25 @@ async fn main() {
     let mut frame_index = 0;
     let mut sim = make_world(gravity);
 
+    let a = sim.balls.insert(TestObject {
+        position: Vec2::ZERO,
+        color: PINK,
+    });
+
+    let blobs = sim.cast_physics();
+
+    let mouse_rbd = spawn_rbd_entity(
+        blobs,
+        a,
+        RigidBodyDesc {
+            position: Vec2::ZERO,
+            body_type: RigidBodyType::Static,
+            collision_groups: groups(0, 0),
+            // gravity_mod: 0.0,
+            ..Default::default()
+        },
+    );
+
     loop {
         let delta = get_frame_time();
         frame_index += 1;
@@ -266,25 +285,26 @@ async fn main() {
         let position = random_around(vec2(1.0, 1.0), 0.1, 0.2);
 
         for (index, object) in sim.balls.iter() {
-            let collider = sim
+            let blobs = sim
                 .physics
                 .as_any()
                 .downcast_ref::<blobs::Physics>()
-                .unwrap()
-                .col_set
-                .arena
-                .get(index)
                 .unwrap();
+
+            let collider = blobs.col_set.arena.get(index).unwrap();
+            let rbd_handle = collider.parent.unwrap();
 
             let mut hovered = false;
 
-            if mouse_world.distance(collider.absolute_position) < collider.radius {
-                hovered = true;
+            if mouse_rbd != rbd_handle {
+                if mouse_world.distance(collider.absolute_position) < collider.radius {
+                    hovered = true;
 
-                hover = Some(HoverState {
-                    index: collider.parent.unwrap(),
-                    position: collider.absolute_position,
-                });
+                    hover = Some(HoverState {
+                        index: rbd_handle,
+                        position: collider.absolute_position,
+                    });
+                }
             }
 
             let color = if hovered {
@@ -307,13 +327,7 @@ async fn main() {
                 let rbd_set = &blobs.rbd_set;
 
                 let a = rbd_set.get(spring.rigid_body_a).unwrap().position;
-
-                let b = match spring.connection_b {
-                    SpringConnection::RigidBody(rbd_handle_b) => {
-                        rbd_set.get(rbd_handle_b).unwrap().position
-                    }
-                    SpringConnection::Location(position) => position,
-                };
+                let b = rbd_set.get(spring.rigid_body_b).unwrap().position;
 
                 draw_line(a.x, a.y, b.x, b.y, 0.1, BLUE);
             }
@@ -436,15 +450,15 @@ async fn main() {
                 // }
 
                 if let Some(hover) = hover {
-                    if drag.is_none() && is_mouse_button_down(MouseButton::Left) {
+                    if drag.is_none() && is_mouse_button_pressed(MouseButton::Left) {
                         let spring = sim.cast_physics::<blobs::Physics>().springs.insert(Spring {
                             rigid_body_a: hover.index,
-                            connection_b: SpringConnection::Location(mouse_world),
+                            rigid_body_b: mouse_rbd,
                             rest_length: 1.0,
                             stiffness: 1000.0,
                             damping: 50.0,
                         });
-
+                        
                         drag = Some(DragState {
                             spring: SpringHandle(spring),
                             index: hover.index,
@@ -464,13 +478,17 @@ async fn main() {
                     drag = None;
                 }
 
+                sim.cast_physics::<blobs::Physics>()
+                    .rbd_set
+                    .get_mut(mouse_rbd)
+                    .unwrap()
+                    .position = mouse_world;
+
                 if let Some(drag) = drag {
                     if is_mouse_button_down(MouseButton::Left) {
                         let blobs = sim.cast_physics::<blobs::Physics>();
 
                         // let rbd = blobs.rbd_set.arena.get_mut(drag.index.0).unwrap();
-                        blobs.springs.get_mut(*drag.spring).unwrap().connection_b =
-                            SpringConnection::Location(mouse_world);
 
                         // rbd.position = drag.start + mouse_world - drag.offset;
                         // rbd.position = mouse_world;

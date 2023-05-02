@@ -1,9 +1,19 @@
+use std::ops::Deref;
+
 use thunderdome::Index;
 
 use crate::*;
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct RigidBodyHandle(pub Index);
+
+impl Deref for RigidBodyHandle {
+    type Target = Index;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Copy, Clone, Debug)]
 pub struct RbdHandleComponent(pub RigidBodyHandle);
