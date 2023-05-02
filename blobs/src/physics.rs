@@ -54,6 +54,7 @@ impl Physics {
         }
     }
 
+    #[deprecated]
     pub fn step(&mut self, delta: f64) {
         let _span = tracy_span!("step");
         self.integrate(self.substeps, delta as f32);
@@ -357,6 +358,10 @@ impl Physics {
             let _span = tracy_span!("substep");
 
             self.apply_gravity();
+
+            for (_, spring) in &self.springs {
+                spring.apply_force(&mut self.rbd_set);
+            }
 
             if self.use_spatial_hash {
                 self.spatial_collisions();

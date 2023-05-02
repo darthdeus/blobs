@@ -42,8 +42,14 @@ impl Spring {
         let distance = delta_position.length();
         let direction = delta_position / distance;
 
-        let force_magnitude = self.stiffness * (distance - self.rest_length)
-            + self.damping * (body_a.get_velocity() - position_b).dot(direction);
+        // let force_magnitude = self.stiffness * (distance - self.rest_length)
+        //     + self.damping * (body_a.get_velocity() - position_b).dot(direction);
+
+        let relative_velocity = body_a.get_velocity() - position_b;
+        let damping_force = self.damping * relative_velocity.dot(direction) * direction;
+
+        let force_magnitude = self.stiffness * (distance - self.rest_length) - damping_force;
+
         let force = direction * force_magnitude;
 
         let body_a = rbd_set.arena.get_mut(self.rigid_body_a.0).unwrap();

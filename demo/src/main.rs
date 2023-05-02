@@ -210,7 +210,7 @@ async fn main() {
             enable_autospawn = !enable_autospawn;
         }
 
-        if is_key_down(KeyCode::Key2) {
+        if is_key_down(KeyCode::Key3) {
             let blobs = sim.cast_physics::<blobs::Physics>();
 
             let joint_iterations = blobs.joint_iterations;
@@ -435,9 +435,9 @@ async fn main() {
                         let spring = sim.cast_physics::<blobs::Physics>().springs.insert(Spring {
                             rigid_body_a: hover.index,
                             connection_b: SpringConnection::Location(mouse_world),
-                            rest_length: 0.0,
-                            stiffness: 0.2,
-                            damping: 0.2,
+                            rest_length: 1.0,
+                            stiffness: 1000.0,
+                            damping: 50.0,
                         });
 
                         drag = Some(DragState {
