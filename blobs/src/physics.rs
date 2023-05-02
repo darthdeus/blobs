@@ -522,8 +522,14 @@ impl Physics {
                 // body_a.position -= body_a.mass.recip() / inv_mass_sum * correction * 0.5;
                 // body_b.position += body_b.mass.recip() / inv_mass_sum * correction * 0.5;
 
-                body_a.position += dt * correction * 0.5;
-                body_b.position -= dt * correction * 0.5;
+                if body_a.is_static() {
+                    body_b.position -= dt * correction;
+                } else if body_b.is_static() {
+                    body_a.position += dt * correction;
+                } else {
+                    body_a.position += dt * correction * 0.5;
+                    body_b.position -= dt * correction * 0.5;
+                }
             }
         }
     }
