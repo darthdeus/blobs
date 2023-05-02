@@ -2,9 +2,8 @@ use crate::*;
 
 #[derive(Debug)]
 pub struct Collider {
-    pub offset: Vec2,
-    pub rotation: f32,
-    pub scale: Vec2,
+    pub offset: Affine2,
+    pub absolute_transform: Affine2,
 
     pub user_data: u128,
     pub parent: Option<RigidBodyHandle>,
@@ -13,7 +12,6 @@ pub struct Collider {
 
     pub flags: ColliderFlags,
 
-    pub absolute_position: Vec2,
     pub collision_groups: InteractionGroups,
 
     pub shape: Box<dyn Shape>,
@@ -21,7 +19,7 @@ pub struct Collider {
 
 impl Collider {
     pub fn translation(&self) -> Vec2 {
-        self.absolute_position
+        self.absolute_transform.translation
     }
 
     pub fn shape(&self) -> &dyn Shape {

@@ -85,7 +85,7 @@ impl PhysicsEngine for blobs::Physics {
         let collider = self.col_set.arena.get(index).unwrap();
 
         SimpleCollider {
-            position: collider.absolute_position,
+            position: collider.translation(),
             radius: collider.radius,
         }
     }
@@ -123,10 +123,8 @@ pub fn spawn_rbd_entity(
     let rbd_handle = physics.insert_rbd(rbd);
 
     let collider = Collider {
-        offset: Vec2::ZERO,
-        absolute_position: desc.position,
-        rotation: 0.0,
-        scale: Vec2::ONE,
+        offset: Affine2::IDENTITY,
+        absolute_transform: Affine2::from_translation(desc.position),
         user_data,
         parent: Some(rbd_handle),
         radius: desc.radius,

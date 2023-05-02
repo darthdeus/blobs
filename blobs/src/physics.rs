@@ -197,11 +197,6 @@ impl Physics {
 
         for (i, idx_a) in keys.iter().enumerate() {
             for idx_b in keys.iter().take(i) {
-                // for idx_b in keys.iter() {
-                //     if idx_a >= idx_b {
-                //         continue;
-                //     }
-
                 let (Some(col_a), Some(col_b)) = self.col_set.arena.get2_mut(*idx_a, *idx_b) else { continue; };
 
                 let Some(parent_a) = col_a.parent else { continue; };
@@ -211,7 +206,7 @@ impl Physics {
                     continue;
                 }
 
-                let mut axis = col_a.absolute_position - col_b.absolute_position;
+                let mut axis = col_a.translation() - col_b.translation();
                 let mut distance = axis.length();
 
                 let min_dist = col_a.radius + col_b.radius;
@@ -225,11 +220,11 @@ impl Physics {
                         rbd_a.position += push_out;
                         rbd_b.position -= push_out;
 
-                        col_a.absolute_position = rbd_a.position + col_a.offset;
-                        col_b.absolute_position = rbd_b.position + col_b.offset;
+                        col_a.absolute_transform.translation = rbd_a.position + col_a.offset.translation;
+                        col_b.absolute_transform.translation = rbd_b.position + col_b.offset.translation;
 
                         // Recalculate axis and distance
-                        axis = col_a.absolute_position - col_b.absolute_position;
+                        axis = col_a.translation() - col_b.translation();
                         distance = axis.length();
                     }
 
@@ -295,7 +290,7 @@ impl Physics {
                         continue;
                     }
 
-                    let axis = col_a.absolute_position - col_b.absolute_position;
+                    let axis = col_a.translation() - col_b.translation();
                     let distance = axis.length();
                     let min_dist = col_a.radius + col_b.radius;
 
@@ -370,7 +365,8 @@ impl Physics {
         for (_, body) in self.rbd_set.arena.iter_mut() {
             for col_handle in body.colliders() {
                 if let Some(collider) = self.col_set.get_mut(*col_handle) {
-                    collider.absolute_position = body.position + collider.offset;
+                    collider.absolute_transform.translation =
+                        body.position + collider.offset.translation;
                 }
             }
         }
@@ -424,41 +420,6 @@ impl Physics {
             self.update_objects(step_delta);
             self.apply_constraints();
         }
-
-        // for (_, obj_a) in self.rbd_set.arena.iter_mut() {
-        //     for (_, obj_b) in self.rbd_set.arena.iter_mut() {
-        //         // let obj = Vec2::ZERO;
-        //         // let to_obj = body.position - obj;
-        //         // let dist = to_obj.length();
-        //         // let radius = 3.0;
-        //         //
-        //         // if dist > (radius - 0.5) {
-        //         //     let n = to_obj / dist;
-        //         //     body.position = obj + n * (dist - 0.5);
-        //         // }
-        //     }
-        // }
-
-        // for (i, (col_a_id, col_a)) in self.col_set.arena.iter().enumerate() {
-        //     for (col_b_id, col_b) in self.col_set.arena.iter().take(i) {
-        //         if !col_a.collision_groups.test(col_b.collision_groups) {
-        //             continue;
-        //         }
-        //
-        //         let distance =
-        //             col_a.absolute_position.distance(col_b.absolute_position);
-        //
-        //         if distance < col_a.size + col_b.size {
-        //             self.collision_send
-        //                 .send(CollisionEvent::Started(
-        //                     ColliderHandle(col_a_id),
-        //                     ColliderHandle(col_b_id),
-        //                     CollisionEventFlags::empty(),
-        //                 ))
-        //                 .unwrap();
-        //         }
-        //     }
-        // }
     }
 
     // fn solve_fixed_joints(&mut self, dt: f32) {
