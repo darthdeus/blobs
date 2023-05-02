@@ -106,8 +106,17 @@ impl Physics {
         collider: Collider,
         rbd_handle: RigidBodyHandle,
     ) -> ColliderHandle {
-        self.col_set
-            .insert_with_parent(collider, rbd_handle, &mut self.rbd_set)
+        let col_handle = self
+            .col_set
+            .insert_with_parent(collider, rbd_handle, &mut self.rbd_set);
+
+        self.rbd_set
+            .get_mut(rbd_handle)
+            .expect("parent rigid body must exist when inserting collider")
+            .colliders
+            .push(col_handle);
+
+        col_handle
     }
 
     pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
