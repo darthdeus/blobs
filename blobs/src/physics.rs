@@ -184,15 +184,31 @@ impl Physics {
                     continue;
                 }
 
-                let axis = col_a.absolute_position - col_b.absolute_position;
-                let distance = axis.length();
+                let mut axis = col_a.absolute_position - col_b.absolute_position;
+                let mut distance = axis.length();
+
                 let min_dist = col_a.radius + col_b.radius;
 
                 if distance < min_dist {
                     let (Some(rbd_a), Some(rbd_b)) = self.rbd_set.arena.get2_mut(parent_a.0, parent_b.0) else { continue; };
 
+                    if distance < 1e-6 {
+                        // A small push-out value to separate the objects
+                        let push_out = Vec2::new(0.01, 0.0);
+                        rbd_a.position += push_out;
+                        rbd_b.position -= push_out;
+
+                        col_a.absolute_position = rbd_a.position + col_a.offset;
+                        col_b.absolute_position = rbd_b.position + col_b.offset;
+
+                        // Recalculate axis and distance
+                        axis = col_a.absolute_position - col_b.absolute_position;
+                        distance = axis.length();
+                    }
+
                     if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
                         let n = axis / distance;
+                        assert!(!n.is_nan());
                         let delta = min_dist - distance;
 
                         let ratio = Self::mass_ratio(rbd_a, rbd_b);

@@ -54,55 +54,59 @@ fn make_world(gravity: Vec2) -> Simulation {
 
     let mut sim = Simulation::new(Box::new(blob_physics));
 
-    {
-        let spacing = 0.3;
-        let num = 10;
-        let w = num;
-        let h = num;
+    // {
+    //     let spacing = 0.3;
+    //     let num = 10;
+    //     let w = num;
+    //     let h = num;
+    //
+    //     let offset = -vec2(w as f32 * spacing, h as f32 * spacing) / 2.0;
+    //
+    //     let grid = grids::Grid::filled_with(w, h, |x, y| {
+    //         let idx = sim.balls.insert(TestObject {
+    //             position: Vec2::ZERO,
+    //             color: YELLOW,
+    //         });
+    //
+    //         let blobs = sim.cast_physics();
+    //
+    //         let rbd_handle = spawn_rbd_entity(
+    //             blobs,
+    //             idx,
+    //             RigidBodyDesc {
+    //                 position: vec2(x as f32 * spacing, y as f32 * spacing) + offset,
+    //                 radius: 0.1,
+    //                 // gravity_mod: 0.0,
+    //                 ..Default::default()
+    //             },
+    //         );
+    //
+    //         (idx, rbd_handle)
+    //     });
+    //
+    //     for (x, y, (_, rbd_handle_a)) in grid.iter() {
+    //         let blobs = sim.cast_physics::<blobs::Physics>();
+    //
+    //         if x < grid.width() - 1 {
+    //             let rbd_handle_b = grid[(x + 1, y)].1;
+    //             blobs.create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
+    //         }
+    //         if y < grid.width() - 1 {
+    //             let rbd_handle_b = grid[(x, y + 1)].1;
+    //             blobs.create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
+    //         }
+    //     }
+    // }
 
-        let offset = -vec2(w as f32 * spacing, h as f32 * spacing) / 2.0;
-
-        let grid = grids::Grid::filled_with(w, h, |x, y| {
-            let idx = sim.balls.insert(TestObject {
-                position: Vec2::ZERO,
-                color: YELLOW,
-            });
-
-            let blobs = sim.cast_physics();
-
-            let rbd_handle = spawn_rbd_entity(
-                blobs,
-                idx,
-                RigidBodyDesc {
-                    position: vec2(x as f32 * spacing, y as f32 * spacing) + offset,
-                    radius: 0.1,
-                    // gravity_mod: 0.0,
-                    ..Default::default()
-                },
-            );
-
-            (idx, rbd_handle)
-        });
-
-        for (x, y, (_, rbd_handle_a)) in grid.iter() {
-            let blobs = sim.cast_physics::<blobs::Physics>();
-
-            if x < grid.width() - 1 {
-                let rbd_handle_b = grid[(x + 1, y)].1;
-                blobs.create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
-            }
-            if y < grid.width() - 1 {
-                let rbd_handle_b = grid[(x, y + 1)].1;
-                blobs.create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
-            }
-        }
-    }
+    spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
+    spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
 
     {
         let a = sim.balls.insert(TestObject {
             position: Vec2::ZERO,
             color: YELLOW,
         });
+
         let b = sim.balls.insert(TestObject {
             position: Vec2::ZERO,
             color: GREEN,
@@ -136,6 +140,22 @@ fn make_world(gravity: Vec2) -> Simulation {
     sim
 }
 
+fn spawn_body(sim: &mut Simulation, position: Vec2, color: Color) -> RigidBodyHandle {
+    let a = sim.balls.insert(TestObject { position, color });
+
+    let blobs = sim.cast_physics();
+
+    spawn_rbd_entity(
+        blobs,
+        a,
+        RigidBodyDesc {
+            position,
+            // gravity_mod: 0.0,
+            ..Default::default()
+        },
+    )
+}
+
 #[derive(Copy, Clone, Debug)]
 pub struct DragState {
     pub index: RigidBodyHandle,
@@ -157,21 +177,6 @@ async fn main() {
     let mut drag: Option<DragState> = None;
     let mut hover: Option<HoverState> = None;
     // let mut sim = Simulation::new(Box::new(rapier_physics));
-
-    #[cfg(feature = "rapier")]
-    {
-        let mut rapier_physics = RapierEngine::new(gravity);
-
-        let ground = rapier2d::prelude::ColliderBuilder::cuboid(100.0, 1.0)
-            .translation([0.0, -5.0].into())
-            .collision_groups(rapier2d::geometry::InteractionGroups::new(
-                0b0001.into(),
-                0b0001.into(),
-            ))
-            .build();
-
-        rapier_physics.col_set.insert(ground);
-    }
 
     let mut enable_autospawn = false;
     let mut cooldowns = Cooldowns::new();

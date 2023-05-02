@@ -40,7 +40,9 @@ impl RigidBody {
     }
 
     pub fn apply_force(&mut self, force: Vec2) {
-        self.acceleration += force / self.mass;
+        if !self.is_static() {
+            self.acceleration += force / self.mass;
+        }
     }
 
     pub fn set_velocity(&mut self, velocity: Vec2) {
@@ -72,8 +74,8 @@ impl RigidBody {
         self.acceleration += a;
     }
 
-    pub fn is_fixed(&self) -> bool {
-        self.body_type == RigidBodyType::Fixed
+    pub fn is_static(&self) -> bool {
+        self.body_type == RigidBodyType::Static
     }
 }
 
@@ -86,7 +88,7 @@ pub enum RigidBodyType {
     /// A `RigidBodyType::Dynamic` body can be affected by all external forces.
     Dynamic = 0,
     /// A `RigidBodyType::Fixed` body cannot be affected by external forces.
-    Fixed = 1,
+    Static = 1,
     /// A `RigidBodyType::KinematicPositionBased` body cannot be affected by any external forces but can be controlled
     /// by the user at the position level while keeping realistic one-way interaction with dynamic bodies.
     ///
