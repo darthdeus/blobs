@@ -550,4 +550,8 @@ impl Physics {
             }
         }
     }
+
+    pub fn debug_data(&self) -> DebugData {
+        make_debug_data(self)
+    }
 }

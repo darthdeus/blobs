@@ -26,7 +26,9 @@ mod rigid_body;
 mod spatial;
 mod springs;
 mod tests;
+mod debug;
 
+pub use crate::debug::*;
 pub use crate::collider::*;
 pub use crate::groups::*;
 pub use crate::joints::*;
