@@ -37,7 +37,7 @@ pub(crate) fn make_debug_data(physics: &Physics) -> DebugData {
         .arena
         .iter()
         .map(|(_, body)| {
-            let transform = Affine2::from_translation(body.position);
+            let transform = Affine2::from_angle_translation(body.rotation, body.position);
             DebugRigidBody { transform }
         })
         .collect();

@@ -13,7 +13,7 @@ use macroquad::{
     rand::gen_range,
     shapes::{draw_line, draw_poly},
     texture::{draw_texture_ex, load_texture, DrawTextureParams, Texture2D},
-    time::{get_fps, get_frame_time},
+    time::{get_fps, get_frame_time, get_time},
     window::{clear_background, next_frame, screen_height, screen_width, Conf},
 };
 
@@ -54,85 +54,85 @@ fn make_world(gravity: Vec2) -> Simulation {
 
     let mut sim = Simulation::new(blob_physics);
 
-    {
-        let spacing = 0.3;
-        let num = 10;
-        let w = num;
-        let h = num;
+    // {
+    //     let spacing = 0.3;
+    //     let num = 10;
+    //     let w = num;
+    //     let h = num;
+    //
+    //     let offset = -vec2(w as f32 * spacing, h as f32 * spacing) / 2.0;
+    //
+    //     let grid = grids::Grid::filled_with(w, h, |x, y| {
+    //         let idx = sim.balls.insert(TestObject {
+    //             position: Vec2::ZERO,
+    //             color: YELLOW,
+    //         });
+    //
+    //         let rbd_handle = spawn_rbd_entity(
+    //             &mut sim.physics,
+    //             idx,
+    //             RigidBodyDesc {
+    //                 position: vec2(x as f32 * spacing, y as f32 * spacing) + offset,
+    //                 radius: 0.1,
+    //                 // gravity_mod: 0.0,
+    //                 ..Default::default()
+    //             },
+    //         );
+    //
+    //         (idx, rbd_handle)
+    //     });
+    //
+    //     for (x, y, (_, rbd_handle_a)) in grid.iter() {
+    //         if x < grid.width() - 1 {
+    //             let rbd_handle_b = grid[(x + 1, y)].1;
+    //             sim.physics
+    //                 .create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
+    //         }
+    //         if y < grid.width() - 1 {
+    //             let rbd_handle_b = grid[(x, y + 1)].1;
+    //             sim.physics
+    //                 .create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
+    //         }
+    //     }
+    //
+    //     let a = sim.balls.insert(TestObject {
+    //         position: Vec2::ZERO,
+    //         color: ORANGE,
+    //     });
+    //
+    //     let cloth_pin = spawn_rbd_entity(
+    //         &mut sim.physics,
+    //         a,
+    //         RigidBodyDesc {
+    //             position: vec2(0.0, 3.5),
+    //             body_type: RigidBodyType::Static,
+    //             collision_groups: groups(0, 0),
+    //             // gravity_mod: 0.0,
+    //             ..Default::default()
+    //         },
+    //     );
+    //
+    //     let grid_anchor = grid[(5, 0)].1;
+    //
+    //     // let spring = blobs.springs.insert(Spring {
+    //     //     rigid_body_a: grid_anchor,
+    //     //     rigid_body_b: cloth_pin,
+    //     //     rest_length: 1.0,
+    //     //     stiffness: 3000.0,
+    //     //     damping: 50.0,
+    //     // });
+    //
+    //     sim.physics.create_fixed_joint_with_distance(
+    //         grid_anchor,
+    //         cloth_pin,
+    //         Vec2::ZERO,
+    //         Vec2::ZERO,
+    //         0.1,
+    //     );
+    // }
 
-        let offset = -vec2(w as f32 * spacing, h as f32 * spacing) / 2.0;
-
-        let grid = grids::Grid::filled_with(w, h, |x, y| {
-            let idx = sim.balls.insert(TestObject {
-                position: Vec2::ZERO,
-                color: YELLOW,
-            });
-
-            let rbd_handle = spawn_rbd_entity(
-                &mut sim.physics,
-                idx,
-                RigidBodyDesc {
-                    position: vec2(x as f32 * spacing, y as f32 * spacing) + offset,
-                    radius: 0.1,
-                    // gravity_mod: 0.0,
-                    ..Default::default()
-                },
-            );
-
-            (idx, rbd_handle)
-        });
-
-        for (x, y, (_, rbd_handle_a)) in grid.iter() {
-            if x < grid.width() - 1 {
-                let rbd_handle_b = grid[(x + 1, y)].1;
-                sim.physics
-                    .create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
-            }
-            if y < grid.width() - 1 {
-                let rbd_handle_b = grid[(x, y + 1)].1;
-                sim.physics
-                    .create_fixed_joint(*rbd_handle_a, rbd_handle_b, Vec2::ZERO, Vec2::ZERO);
-            }
-        }
-
-        let a = sim.balls.insert(TestObject {
-            position: Vec2::ZERO,
-            color: ORANGE,
-        });
-
-        let cloth_pin = spawn_rbd_entity(
-            &mut sim.physics,
-            a,
-            RigidBodyDesc {
-                position: vec2(0.0, 3.5),
-                body_type: RigidBodyType::Static,
-                collision_groups: groups(0, 0),
-                // gravity_mod: 0.0,
-                ..Default::default()
-            },
-        );
-
-        let grid_anchor = grid[(5, 0)].1;
-
-        // let spring = blobs.springs.insert(Spring {
-        //     rigid_body_a: grid_anchor,
-        //     rigid_body_b: cloth_pin,
-        //     rest_length: 1.0,
-        //     stiffness: 3000.0,
-        //     damping: 50.0,
-        // });
-
-        sim.physics.create_fixed_joint_with_distance(
-            grid_anchor,
-            cloth_pin,
-            Vec2::ZERO,
-            Vec2::ZERO,
-            0.1,
-        );
-    }
-
-    spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
-    spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
+    // spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
+    // spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
 
     {
         let id = sim.balls.insert(TestObject {
@@ -143,7 +143,7 @@ fn make_world(gravity: Vec2) -> Simulation {
         let desc = RigidBodyDesc {
             position: vec2(-4.0, -1.0),
             radius: 0.4,
-            // gravity_mod: 0.0,
+            gravity_mod: 0.0,
             ..Default::default()
         };
 
@@ -172,40 +172,41 @@ fn make_world(gravity: Vec2) -> Simulation {
         );
     }
 
-    {
-        let a = sim.balls.insert(TestObject {
-            position: Vec2::ZERO,
-            color: YELLOW,
-        });
-
-        let b = sim.balls.insert(TestObject {
-            position: Vec2::ZERO,
-            color: GREEN,
-        });
-
-        let rbd_a = spawn_rbd_entity(
-            &mut sim.physics,
-            a,
-            RigidBodyDesc {
-                position: vec2(3.0, 0.0),
-                // gravity_mod: 0.0,
-                ..Default::default()
-            },
-        );
-
-        let rbd_b = spawn_rbd_entity(
-            &mut sim.physics,
-            b,
-            RigidBodyDesc {
-                position: vec2(-3.0, 0.0),
-                gravity_mod: 0.1,
-                ..Default::default()
-            },
-        );
-
-        sim.physics
-            .create_fixed_joint(rbd_a, rbd_b, Vec2::ZERO, Vec2::ZERO);
-    }
+    // Fixed Joint Test
+    // {
+    //     let a = sim.balls.insert(TestObject {
+    //         position: Vec2::ZERO,
+    //         color: YELLOW,
+    //     });
+    //
+    //     let b = sim.balls.insert(TestObject {
+    //         position: Vec2::ZERO,
+    //         color: GREEN,
+    //     });
+    //
+    //     let rbd_a = spawn_rbd_entity(
+    //         &mut sim.physics,
+    //         a,
+    //         RigidBodyDesc {
+    //             position: vec2(3.0, 0.0),
+    //             // gravity_mod: 0.0,
+    //             ..Default::default()
+    //         },
+    //     );
+    //
+    //     let rbd_b = spawn_rbd_entity(
+    //         &mut sim.physics,
+    //         b,
+    //         RigidBodyDesc {
+    //             position: vec2(-3.0, 0.0),
+    //             gravity_mod: 0.1,
+    //             ..Default::default()
+    //         },
+    //     );
+    //
+    //     sim.physics
+    //         .create_fixed_joint(rbd_a, rbd_b, Vec2::ZERO, Vec2::ZERO);
+    // }
 
     sim
 }
@@ -362,6 +363,10 @@ async fn main() {
         //     draw_circle(rbd.position, rbd.radius, RED);
         // }
 
+        for (_, body) in sim.physics.rbd_set.arena.iter_mut() {
+            body.rotation += 1.0 * delta;
+        }
+
         let (mouse_x, mouse_y) = mouse_position();
         let _mouse_screen = vec2(mouse_x, mouse_y);
         // Working around macroquad using different version of glam.
@@ -432,6 +437,8 @@ async fn main() {
             let a = collider.transform.translation;
             let b = a + vec2(angle.cos(), angle.sin()) * r;
 
+            draw_line(a.x, a.y, b.x, b.y, 0.05, DARKBLUE);
+
             // draw_texture_ex(
             //     texture,
             //     collider.transform.translation.x - r,
@@ -443,12 +450,20 @@ async fn main() {
             //         ..Default::default()
             //     },
             // );
-
-            draw_line(a.x, a.y, b.x, b.y, 0.05, DARKBLUE);
         }
 
         for body in debug.bodies.iter() {
-            draw_circle(body.transform.translation, 0.05, PINK.alpha(0.5));
+            let rbd_radius = 2.0;
+            draw_circle(body.transform.translation, rbd_radius, PINK.alpha(0.5));
+
+            let up = vec2(0.0, 1.0);
+            let angle = body.transform.transform_vector2(up).angle_between(up);
+            let r = rbd_radius;
+
+            let a = body.transform.translation;
+            let b = a + vec2(angle.cos(), angle.sin()) * r;
+
+            draw_line(a.x, a.y, b.x, b.y, 0.05, DARKBLUE);
         }
 
         for spring in debug.springs.iter() {
