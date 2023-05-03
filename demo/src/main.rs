@@ -240,7 +240,7 @@ pub struct HoverState {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let texture: Texture2D = load_texture("assets/happy-tree.png").await.unwrap();
+    // let texture: Texture2D = load_texture("assets/happy-tree.png").await.unwrap();
 
     let gravity = vec2(0.0, -30.0);
 
@@ -432,17 +432,17 @@ async fn main() {
             let a = collider.transform.translation;
             let b = a + vec2(angle.cos(), angle.sin()) * r;
 
-            draw_texture_ex(
-                texture,
-                collider.transform.translation.x - r,
-                collider.transform.translation.y - r,
-                BLUE.alpha(0.4),
-                DrawTextureParams {
-                    dest_size: Some(macroquad::prelude::vec2(r * 2.0, r * 2.0)),
-                    rotation: angle,
-                    ..Default::default()
-                },
-            );
+            // draw_texture_ex(
+            //     texture,
+            //     collider.transform.translation.x - r,
+            //     collider.transform.translation.y - r,
+            //     BLUE.alpha(0.4),
+            //     DrawTextureParams {
+            //         dest_size: Some(macroquad::prelude::vec2(r * 2.0, r * 2.0)),
+            //         rotation: angle,
+            //         ..Default::default()
+            //     },
+            // );
 
             draw_line(a.x, a.y, b.x, b.y, 0.05, DARKBLUE);
         }
