@@ -90,8 +90,20 @@ impl ColliderSet {
         self.arena.len()
     }
 
-    pub fn remove(&mut self, handle: ColliderHandle) {
+    pub fn remove_ignoring_parent(&mut self, handle: ColliderHandle) {
         self.arena.remove(handle.0);
+    }
+
+    pub fn remove(&mut self, handle: ColliderHandle, rbd_set: &mut RigidBodySet) {
+        if let Some(collider) = self.arena.get(handle.0) {
+            if let Some(parent) = collider.parent {
+                if let Some(body) = rbd_set.arena.get_mut(parent.0) {
+                    body.colliders.retain(|&h| h != handle);
+                }
+            }
+        }
+
+        self.remove_ignoring_parent(handle);
     }
 
     pub fn insert_with_parent(
