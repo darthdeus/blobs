@@ -245,7 +245,7 @@ async fn main() {
     let gravity = vec2(0.0, -30.0);
 
     let mut drag: Option<DragState> = None;
-    let mut hover: Option<HoverState> = None;
+    let hover: Option<HoverState> = None;
     // let mut sim = Simulation::new(Box::new(rapier_physics));
 
     let mut enable_autospawn = false;
@@ -253,6 +253,7 @@ async fn main() {
 
     let mut frame_index = 0;
     let mut sim = make_world(gravity);
+    // sim.physics.use_spatial_hash = true;
 
     let a = sim.balls.insert(TestObject {
         position: Vec2::ZERO,
@@ -271,6 +272,28 @@ async fn main() {
             ..Default::default()
         },
     );
+
+    // let pos = vec2(5.0, 5.0);
+    //
+    // let rbd = RigidBody {
+    //     position: pos,
+    //     position_old: pos,
+    //     gravity_mod: 1.0,
+    //     mass: 1.0,
+    //     velocity_request: Some(vec2(1.0, 0.)),
+    //     calculated_velocity: Vec2::ZERO,
+    //     acceleration: Vec2::ZERO,
+    //     rotation: 0.0,
+    //     scale: Vec2::ONE,
+    //     // angular_velocity: 0.0,
+    //     colliders: vec![],
+    //     user_data: 0,
+    //     connected_joints: vec![],
+    //     body_type: RigidBodyType::KinematicVelocityBased,
+    //     collision_groups: groups(0, 0),
+    // };
+    //
+    // let rbd_handle = sim.physics.insert_rbd(rbd);
 
     loop {
         let delta = get_frame_time();

@@ -10,17 +10,18 @@ pub struct Physics {
     pub col_set: ColliderSet,
     pub joints: Arena<FixedJoint>,
     pub springs: Arena<Spring>,
+    pub constraints: Vec<Constraint>,
 
     pub query_pipeline: QueryPipeline,
 
     pub spatial_hash: SpatialHash,
-    pub constraints: Vec<Constraint>,
-
     pub use_spatial_hash: bool,
 
     pub collision_send: Sender<CollisionEvent>,
     pub collision_recv: Receiver<CollisionEvent>,
     // pub contact_force_recv: Receiver<ContactForceEvent>,
+
+    // Fixed timestep
     pub accumulator: f64,
     pub time: f64,
 }
@@ -272,6 +273,7 @@ impl Physics {
     }
 
     pub fn spatial_collisions(&mut self) {
+        panic!("spatial_collisions BREAKS COLLISIONS, use brute force");
         let _span = tracy_span!("spatial_collisions");
 
         let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
