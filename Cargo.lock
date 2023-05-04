@@ -119,6 +119,7 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 name = "blobs"
 version = "0.0.1"
 dependencies = [
+ "approx",
  "assert_approx_eq",
  "atomic_refcell",
  "bitflags",
@@ -590,6 +591,9 @@ name = "glam"
 version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e4afd9ad95555081e109fe1d21f2a30c691b5f0919c67dfa690a2e1eb6bd51c"
+dependencies = [
+ "approx",
+]
 
 [[package]]
 name = "grids"
