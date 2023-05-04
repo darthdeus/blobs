@@ -123,4 +123,173 @@ impl ColliderSet {
     }
 }
 
-pub struct ColliderBuilder {}
+pub struct ColliderBuilder {
+    offset: Affine2,
+    absolute_transform: Affine2,
+    user_data: u128,
+    parent: Option<RigidBodyHandle>,
+    radius: f32,
+    flags: ColliderFlags,
+    collision_groups: InteractionGroups,
+    shape: Box<dyn Shape>,
+}
+
+impl ColliderBuilder {
+    pub fn new() -> Self {
+        Self {
+            offset: Affine2::IDENTITY,
+            absolute_transform: Affine2::IDENTITY,
+            user_data: 0,
+            parent: None,
+            radius: 0.5,
+            flags: ColliderFlags::default(),
+            collision_groups: InteractionGroups::default(),
+            shape: Box::new(Ball::new(0.5)),
+        }
+    }
+
+    pub fn offset(mut self, offset: Affine2) -> Self {
+        self.offset = offset;
+        self
+    }
+
+    pub fn absolute_transform(mut self, absolute_transform: Affine2) -> Self {
+        self.absolute_transform = absolute_transform;
+        self
+    }
+
+    pub fn user_data(mut self, user_data: u128) -> Self {
+        self.user_data = user_data;
+        self
+    }
+
+    pub fn parent(mut self, parent: RigidBodyHandle) -> Self {
+        self.parent = Some(parent);
+        self
+    }
+
+    pub fn radius(mut self, radius: f32) -> Self {
+        self.radius = radius;
+        self
+    }
+
+    pub fn flags(mut self, flags: ColliderFlags) -> Self {
+        self.flags = flags;
+        self
+    }
+
+    pub fn collision_groups(mut self, collision_groups: InteractionGroups) -> Self {
+        self.collision_groups = collision_groups;
+        self
+    }
+
+    pub fn shape(mut self, shape: Box<dyn Shape>) -> Self {
+        self.shape = shape;
+        self
+    }
+
+    pub fn build(self) -> Collider {
+        Collider {
+            offset: self.offset,
+            absolute_transform: self.absolute_transform,
+            user_data: self.user_data,
+            parent: self.parent,
+            radius: self.radius,
+            flags: self.flags,
+            collision_groups: self.collision_groups,
+            shape: self.shape,
+        }
+    }
+}
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     #[test]
+//     fn test_body_transform() {
+//         let body = RigidBody {
+//             position: Vec2::new(2.0, 3.0),
+//             rotation: std::f32::consts::PI / 2.0, // 90 degrees
+//             scale: Vec2::new(1.0, 1.0),
+//             // ... other fields
+//         };
+//
+//         let expected_transform = Affine2::new(
+//             Matrix2::new(0.0, -1.0, 1.0, 0.0),
+//             Vector2::new(2.0, 3.0),
+//         );
+//
+//         assert_eq!(body.transform(), expected_transform);
+//     }
+//
+//     #[test]
+//     fn test_collider_offset() {
+//         let collider = Collider {
+//             offset: Affine2::new(
+//                 Matrix2::new(1.0, 0.0, 0.0, 1.0),
+//                 Vector2::new(1.0, 1.0),
+//             ),
+//             // ... other fields
+//         };
+//
+//         let body = RigidBody {
+//             position: Vec2::new(2.0, 3.0),
+//             rotation: std::f32::consts::PI / 2.0, // 90 degrees
+//             scale: Vec2::new(1.0, 1.0),
+//             // ... other fields
+//         };
+//
+//         let expected_transform = Affine2::new(
+//             Matrix2::new(0.0, -1.0, 1.0, 0.0),
+//             Vector2::new(2.0, 3.0),
+//         ) * collider.offset;
+//
+//         collider.absolute_transform = body.transform() * collider.offset;
+//         assert_eq!(collider.absolute_transform, expected_transform);
+//     }
+// }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_body_transform() {
+        let body = RigidBodyBuilder::new()
+            .position(Vec2::new(2.0, 3.0))
+            .rotation(std::f32::consts::PI / 2.0)
+            .scale(Vec2::new(1.0, 1.0))
+            .build();
+
+        let expected_transform = Affine2::new(
+            Matrix2::new(0.0, -1.0, 1.0, 0.0),
+            Vector2::new(2.0, 3.0),
+        );
+
+        assert_eq!(body.transform(), expected_transform);
+    }
+
+    #[test]
+    fn test_collider_offset() {
+        let collider = ColliderBuilder::new()
+            .offset(Affine2::new(
+                Matrix2::new(1.0, 0.0, 0.0, 1.0),
+                Vector2::new(1.0, 1.0),
+            ))
+            .build();
+
+        let body = RigidBodyBuilder::new()
+            .position(Vec2::new(2.0, 3.0))
+            .rotation(std::f32::consts::PI / 2.0)
+            .scale(Vec2::new(1.0, 1.0))
+            .build();
+
+        let expected_transform = Affine2::new(
+            Matrix2::new(0.0, -1.0, 1.0, 0.0),
+            Vector2::new(2.0, 3.0),
+        ) * collider.offset;
+
+        assert_eq!(body.transform() * collider.offset, expected_transform);
+    }
+}
