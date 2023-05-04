@@ -157,4 +157,129 @@ impl RigidBodySet {
     }
 }
 
-pub struct RigidBodyBuilder {}
+pub struct RigidBodyBuilder {
+    position: Vec2,
+    position_old: Vec2,
+    mass: f32,
+    gravity_mod: f32,
+    rotation: f32,
+    scale: Vec2,
+    acceleration: Vec2,
+    velocity_request: Option<Vec2>,
+    calculated_velocity: Vec2,
+    colliders: Vec<ColliderHandle>,
+    connected_joints: Vec<JointHandle>,
+    user_data: u128,
+    body_type: RigidBodyType,
+    collision_groups: InteractionGroups,
+}
+
+impl RigidBodyBuilder {
+    pub fn new() -> Self {
+        Self {
+            position: Vec2::new(0.0, 0.0),
+            position_old: Vec2::new(0.0, 0.0),
+            mass: 1.0,
+            gravity_mod: 1.0,
+            rotation: 0.0,
+            scale: Vec2::new(1.0, 1.0),
+            acceleration: Vec2::new(0.0, 0.0),
+            velocity_request: None,
+            calculated_velocity: Vec2::new(0.0, 0.0),
+            colliders: Vec::new(),
+            connected_joints: Vec::new(),
+            user_data: 0,
+            body_type: RigidBodyType::Dynamic,
+            collision_groups: InteractionGroups::default(),
+        }
+    }
+
+    pub fn position(mut self, position: Vec2) -> Self {
+        self.position = position;
+        self
+    }
+
+    pub fn position_old(mut self, position_old: Vec2) -> Self {
+        self.position_old = position_old;
+        self
+    }
+
+    pub fn mass(mut self, mass: f32) -> Self {
+        self.mass = mass;
+        self
+    }
+
+    pub fn gravity_mod(mut self, gravity_mod: f32) -> Self {
+        self.gravity_mod = gravity_mod;
+        self
+    }
+
+    pub fn rotation(mut self, rotation: f32) -> Self {
+        self.rotation = rotation;
+        self
+    }
+
+    pub fn scale(mut self, scale: Vec2) -> Self {
+        self.scale = scale;
+        self
+    }
+
+    pub fn acceleration(mut self, acceleration: Vec2) -> Self {
+        self.acceleration = acceleration;
+        self
+    }
+
+    pub fn velocity_request(mut self, velocity_request: Vec2) -> Self {
+        self.velocity_request = Some(velocity_request);
+        self
+    }
+
+    pub fn calculated_velocity(mut self, calculated_velocity: Vec2) -> Self {
+        self.calculated_velocity = calculated_velocity;
+        self
+    }
+
+    pub fn colliders(mut self, colliders: Vec<ColliderHandle>) -> Self {
+        self.colliders = colliders;
+        self
+    }
+
+    pub fn connected_joints(mut self, connected_joints: Vec<JointHandle>) -> Self {
+        self.connected_joints = connected_joints;
+        self
+    }
+
+    pub fn user_data(mut self, user_data: u128) -> Self {
+        self.user_data = user_data;
+        self
+    }
+
+    pub fn body_type(mut self, body_type: RigidBodyType) -> Self {
+        self.body_type = body_type;
+        self
+    }
+
+    pub fn collision_groups(mut self, collision_groups: InteractionGroups) -> Self {
+        self.collision_groups = collision_groups;
+        self
+    }
+
+    pub fn build(self) -> RigidBody {
+        RigidBody {
+            position: self.position,
+            position_old: self.position_old,
+            mass: self.mass,
+            gravity_mod: self.gravity_mod,
+            rotation: self.rotation,
+            scale: self.scale,
+            acceleration: self.acceleration,
+            velocity_request: self.velocity_request,
+            calculated_velocity: self.calculated_velocity,
+            colliders: self.colliders,
+            connected_joints: self.connected_joints,
+            user_data: self.user_data,
+            body_type: self.body_type,
+            collision_groups: self.collision_groups,
+        }
+    }
+}
