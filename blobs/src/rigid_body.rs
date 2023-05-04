@@ -44,6 +44,10 @@ pub struct RigidBody {
 }
 
 impl RigidBody {
+    pub fn transform(&self) -> Affine2 {
+        Affine2::from_angle_translation(self.rotation, self.position)
+    }
+
     pub fn translation(&self) -> Vec2 {
         self.position
     }

@@ -381,11 +381,10 @@ impl Physics {
         }
 
         for (_, body) in self.rbd_set.arena.iter_mut() {
-            let body_transform = Affine2::from_angle_translation(body.rotation, body.position);
-
             for col_handle in body.colliders() {
                 if let Some(collider) = self.col_set.get_mut(*col_handle) {
-                    collider.absolute_transform = body_transform * collider.offset;
+                    collider.absolute_transform = body.transform() * collider.offset;
+
                     // collider.absolute_transform = collider.offset * body_transform;
 
                     // collider.absolute_transform.translation =
