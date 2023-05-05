@@ -184,6 +184,6 @@ impl AffineExtensions for Affine2 {
 
     fn angle_dir(&self) -> Vec2 {
         let angle = self.angle();
-        vec2(angle.cos(), angle.sin())
+        Vec2::from_angle(angle)
     }
 }
