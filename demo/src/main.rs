@@ -12,8 +12,7 @@ use macroquad::{
     },
     rand::gen_range,
     shapes::{draw_line, draw_poly},
-    texture::{draw_texture_ex, load_texture, DrawTextureParams, Texture2D},
-    time::{get_fps, get_frame_time, get_time},
+    time::{get_fps, get_frame_time},
     window::{clear_background, next_frame, screen_height, screen_width, Conf},
 };
 
@@ -211,19 +210,19 @@ fn make_world(gravity: Vec2) -> Simulation {
     sim
 }
 
-fn spawn_body(sim: &mut Simulation, position: Vec2, color: Color) -> RigidBodyHandle {
-    let a = sim.balls.insert(TestObject { position, color });
-
-    spawn_rbd_entity(
-        &mut sim.physics,
-        a,
-        RigidBodyDesc {
-            position,
-            // gravity_mod: 0.0,
-            ..Default::default()
-        },
-    )
-}
+// fn spawn_body(sim: &mut Simulation, position: Vec2, color: Color) -> RigidBodyHandle {
+//     let a = sim.balls.insert(TestObject { position, color });
+//
+//     spawn_rbd_entity(
+//         &mut sim.physics,
+//         a,
+//         RigidBodyDesc {
+//             position,
+//             // gravity_mod: 0.0,
+//             ..Default::default()
+//         },
+//     )
+// }
 
 #[derive(Copy, Clone, Debug)]
 pub struct DragState {
@@ -430,12 +429,10 @@ async fn main() {
         for collider in debug.colliders.iter() {
             draw_circle(collider.transform.translation, collider.radius, BLUE);
 
-            let up = vec2(0.0, 1.0);
-            let angle = collider.transform.transform_vector2(up).angle_between(up);
             let r = collider.radius;
 
             let a = collider.transform.translation;
-            let b = a + vec2(angle.cos(), angle.sin()) * r;
+            let b = a + collider.transform.angle_dir() * r;
 
             draw_line(a.x, a.y, b.x, b.y, 0.05, DARKBLUE);
 
@@ -453,15 +450,11 @@ async fn main() {
         }
 
         for body in debug.bodies.iter() {
-            let rbd_radius = 2.0;
-            draw_circle(body.transform.translation, rbd_radius, PINK.alpha(0.5));
-
-            let up = vec2(0.0, 1.0);
-            let angle = body.transform.transform_vector2(up).angle_between(up);
-            let r = rbd_radius;
+            let r = 2.0;
+            draw_circle(body.transform.translation, r, PINK.alpha(0.5));
 
             let a = body.transform.translation;
-            let b = a + vec2(angle.cos(), angle.sin()) * r;
+            let b = a + body.transform.angle_dir() * r;
 
             draw_line(a.x, a.y, b.x, b.y, 0.05, DARKBLUE);
         }

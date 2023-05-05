@@ -18,6 +18,7 @@ use itertools::Itertools;
 use thunderdome::{Arena, Index};
 
 mod collider;
+mod debug;
 mod groups;
 mod joints;
 mod physics;
@@ -26,10 +27,9 @@ mod rigid_body;
 mod spatial;
 mod springs;
 mod tests;
-mod debug;
 
-pub use crate::debug::*;
 pub use crate::collider::*;
+pub use crate::debug::*;
 pub use crate::groups::*;
 pub use crate::joints::*;
 pub use crate::physics::*;
@@ -168,5 +168,22 @@ impl<A, B> ZipTuple<A, B> for (Option<A>, Option<B>) {
 
     fn zip_unwrap(self) -> (A, B) {
         self.zip().unwrap()
+    }
+}
+
+pub trait AffineExtensions {
+    fn angle(&self) -> f32;
+    fn angle_dir(&self) -> Vec2;
+}
+
+impl AffineExtensions for Affine2 {
+    fn angle(&self) -> f32 {
+        let up = vec2(0.0, 1.0);
+        up.angle_between(self.transform_vector2(up))
+    }
+
+    fn angle_dir(&self) -> Vec2 {
+        let angle = self.angle();
+        vec2(angle.cos(), angle.sin())
     }
 }

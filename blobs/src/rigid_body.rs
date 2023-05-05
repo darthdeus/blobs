@@ -267,7 +267,7 @@ impl RigidBodyBuilder {
     pub fn build(self) -> RigidBody {
         RigidBody {
             position: self.position,
-            position_old: self.position_old,
+            position_old: self.position,
             mass: self.mass,
             gravity_mod: self.gravity_mod,
             rotation: self.rotation,
