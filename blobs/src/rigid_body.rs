@@ -195,12 +195,8 @@ impl RigidBodyBuilder {
     }
 
     pub fn position(mut self, position: Vec2) -> Self {
+        self.position_old = position;
         self.position = position;
-        self
-    }
-
-    pub fn position_old(mut self, position_old: Vec2) -> Self {
-        self.position_old = position_old;
         self
     }
 
@@ -267,7 +263,7 @@ impl RigidBodyBuilder {
     pub fn build(self) -> RigidBody {
         RigidBody {
             position: self.position,
-            position_old: self.position,
+            position_old: self.position_old,
             mass: self.mass,
             gravity_mod: self.gravity_mod,
             rotation: self.rotation,
