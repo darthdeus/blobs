@@ -40,7 +40,8 @@ pub struct RigidBody {
     pub user_data: u128,
 
     pub body_type: RigidBodyType,
-    pub collision_groups: InteractionGroups,
+    // TODO: remove
+    // pub collision_groups: InteractionGroups,
 }
 
 impl RigidBody {
@@ -255,10 +256,10 @@ impl RigidBodyBuilder {
         self
     }
 
-    pub fn collision_groups(mut self, collision_groups: InteractionGroups) -> Self {
-        self.collision_groups = collision_groups;
-        self
-    }
+    // pub fn collision_groups(mut self, collision_groups: InteractionGroups) -> Self {
+    //     self.collision_groups = collision_groups;
+    //     self
+    // }
 
     pub fn build(self) -> RigidBody {
         RigidBody {
@@ -275,7 +276,7 @@ impl RigidBodyBuilder {
             connected_joints: self.connected_joints,
             user_data: self.user_data,
             body_type: self.body_type,
-            collision_groups: self.collision_groups,
+            // collision_groups: self.collision_groups,
         }
     }
 }
