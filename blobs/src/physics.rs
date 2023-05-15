@@ -353,7 +353,7 @@ impl Physics {
         1.0 - a.mass / (a.mass + b.mass)
     }
 
-    fn update_objects(&mut self, delta: f32) {
+    fn update_objects(&mut self, dt: f32) {
         let _span = tracy_span!("update positions");
 
         for (idx, body) in self.rbd_set.arena.iter_mut() {
@@ -365,7 +365,7 @@ impl Physics {
             }
 
             if let Some(req_velocity) = body.velocity_request.take() {
-                body.position_old = body.position - req_velocity * delta;
+                body.position_old = body.position - req_velocity * dt;
             }
 
             let displacement = body.position - body.position_old;
@@ -374,10 +374,14 @@ impl Physics {
                 .move_point(idx.to_bits(), body.position - body.position_old);
 
             body.position_old = body.position;
-            body.position += displacement + body.acceleration * delta * delta;
+            body.position += displacement + body.acceleration * dt * dt;
+
+            body.angular_velocity += body.torque / body.inertia * dt;
+            body.rotation += body.angular_velocity * dt;
+            body.torque = 0.0;
 
             body.acceleration = Vec2::ZERO;
-            body.calculated_velocity = displacement / delta;
+            body.calculated_velocity = displacement / dt;
         }
 
         for (_, body) in self.rbd_set.arena.iter_mut() {

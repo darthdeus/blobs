@@ -26,7 +26,15 @@ pub struct RigidBody {
     pub mass: f32,
     pub gravity_mod: f32,
 
+    // in radians
     pub rotation: f32,
+    // in radians per second
+    pub angular_velocity: f32,
+    // in Newton-meters
+    pub torque: f32,
+    // moment of inertia in kg*m^2
+    pub inertia: f32,
+
     pub scale: Vec2,
 
     pub acceleration: Vec2,
@@ -55,7 +63,20 @@ impl RigidBody {
 
     pub fn apply_force(&mut self, force: Vec2) {
         if !self.is_static() {
+            // Convert force to acceleration (F = ma, so a = F/m)
             self.acceleration += force / self.mass;
+        }
+    }
+
+    pub fn apply_force_at_point(&mut self, force: Vec2, point: Vec2) {
+        if !self.is_static() {
+            // Apply linear force
+            self.apply_force(force);
+
+            // Apply rotational force (torque)
+            let lever_arm = point - self.position;
+            // 2d cross product?
+            self.torque += lever_arm.perp_dot(force);
         }
     }
 
@@ -172,7 +193,6 @@ pub struct RigidBodyBuilder {
     connected_joints: Vec<JointHandle>,
     user_data: u128,
     body_type: RigidBodyType,
-    collision_groups: InteractionGroups,
 }
 
 impl RigidBodyBuilder {
@@ -191,7 +211,6 @@ impl RigidBodyBuilder {
             connected_joints: Vec::new(),
             user_data: 0,
             body_type: RigidBodyType::Dynamic,
-            collision_groups: InteractionGroups::default(),
         }
     }
 
@@ -256,11 +275,6 @@ impl RigidBodyBuilder {
         self
     }
 
-    // pub fn collision_groups(mut self, collision_groups: InteractionGroups) -> Self {
-    //     self.collision_groups = collision_groups;
-    //     self
-    // }
-
     pub fn build(self) -> RigidBody {
         RigidBody {
             position: self.position,
@@ -268,7 +282,13 @@ impl RigidBodyBuilder {
             mass: self.mass,
             gravity_mod: self.gravity_mod,
             rotation: self.rotation,
+
+            angular_velocity: 0.0,
+            torque: 0.0,
+            inertia: 0.0,
+
             scale: self.scale,
+
             acceleration: self.acceleration,
             velocity_request: self.velocity_request,
             calculated_velocity: self.calculated_velocity,
