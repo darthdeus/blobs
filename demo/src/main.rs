@@ -242,7 +242,8 @@ pub struct HoverState {
 async fn main() {
     // let texture: Texture2D = load_texture("assets/happy-tree.png").await.unwrap();
 
-    let gravity = vec2(0.0, -30.0);
+    // let gravity = vec2(0.0, -30.0);
+    let gravity = vec2(0.0, 0.0);
 
     let mut drag: Option<DragState> = None;
     let hover: Option<HoverState> = None;
@@ -294,6 +295,25 @@ async fn main() {
     // };
     //
     // let rbd_handle = sim.physics.insert_rbd(rbd);
+
+    let a = sim.balls.insert(TestObject {
+        position: Vec2::ZERO,
+        color: GREEN,
+    });
+
+
+    let torque_test_rbd = spawn_rbd_entity(
+        &mut sim.physics,
+        a,
+        RigidBodyDesc {
+            position: vec2(-2.0, 2.0),
+            body_type: RigidBodyType::Dynamic,
+            collision_groups: groups(0, 0),
+            radius: 0.1,
+            // gravity_mod: 0.0,
+            ..Default::default()
+        },
+    );
 
     loop {
         let delta = get_frame_time();
@@ -362,9 +382,9 @@ async fn main() {
         //     draw_circle(rbd.position, rbd.radius, RED);
         // }
 
-        for (_, body) in sim.physics.rbd_set.arena.iter_mut() {
-            body.rotation += 1.0 * delta;
-        }
+        // for (_, body) in sim.physics.rbd_set.arena.iter_mut() {
+        //     body.rotation += 1.0 * delta;
+        // }
 
         let (mouse_x, mouse_y) = mouse_position();
         let _mouse_screen = vec2(mouse_x, mouse_y);
@@ -424,6 +444,19 @@ async fn main() {
         //     );
         // }
 
+        if is_key_down(KeyCode::E) {
+            let rbd = sim.physics.get_mut_rbd(torque_test_rbd).unwrap();
+
+
+            let force = vec2(0.0, 1.0);
+            rbd.apply_force_at_point(force, mouse_world);
+
+            let a = mouse_world;
+            let b = a + force;
+
+            draw_line(a.x, a.y, b.x, b.y, 0.2, RED);
+        }
+
         let debug = sim.physics.debug_data();
 
         for collider in debug.colliders.iter() {
@@ -450,7 +483,7 @@ async fn main() {
         }
 
         for body in debug.bodies.iter() {
-            let r = 2.0;
+            let r = 0.5;
             draw_circle(body.transform.translation, r, PINK.alpha(0.5));
 
             let a = body.transform.translation;
