@@ -380,6 +380,8 @@ impl Physics {
             body.rotation += body.angular_velocity * dt;
             body.torque = 0.0;
 
+            debug_assert!(!body.rotation.is_nan());
+
             body.acceleration = Vec2::ZERO;
             body.calculated_velocity = displacement / dt;
         }

@@ -285,7 +285,7 @@ impl RigidBodyBuilder {
 
             angular_velocity: 0.0,
             torque: 0.0,
-            inertia: 0.0,
+            inertia: 1.0,
 
             scale: self.scale,
 
