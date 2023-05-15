@@ -133,43 +133,43 @@ fn make_world(gravity: Vec2) -> Simulation {
     // spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
     // spawn_body(&mut sim, vec2(0.5, 0.5), BLUE);
 
-    {
-        let id = sim.balls.insert(TestObject {
-            position: Vec2::ZERO,
-            color: PINK,
-        });
-
-        let desc = RigidBodyDesc {
-            position: vec2(-4.0, -1.0),
-            radius: 0.4,
-            gravity_mod: 0.0,
-            ..Default::default()
-        };
-
-        let rbd = rbd_from_desc(id, desc);
-
-        let rbd_handle = sim.physics.insert_rbd(rbd);
-
-        sim.physics.insert_collider_with_parent(
-            collider_from_desc(
-                id,
-                rbd_handle,
-                Affine2::from_translation(vec2(0.0, 0.0)),
-                desc,
-            ),
-            rbd_handle,
-        );
-
-        sim.physics.insert_collider_with_parent(
-            collider_from_desc(
-                id,
-                rbd_handle,
-                Affine2::from_translation(vec2(1.0, 0.0)),
-                desc,
-            ),
-            rbd_handle,
-        );
-    }
+    // {
+    //     let id = sim.balls.insert(TestObject {
+    //         position: Vec2::ZERO,
+    //         color: PINK,
+    //     });
+    //
+    //     let desc = RigidBodyDesc {
+    //         position: vec2(-4.0, -1.0),
+    //         radius: 0.4,
+    //         gravity_mod: 0.0,
+    //         ..Default::default()
+    //     };
+    //
+    //     let rbd = rbd_from_desc(id, desc);
+    //
+    //     let rbd_handle = sim.physics.insert_rbd(rbd);
+    //
+    //     sim.physics.insert_collider_with_parent(
+    //         collider_from_desc(
+    //             id,
+    //             rbd_handle,
+    //             Affine2::from_translation(vec2(0.0, 0.0)),
+    //             desc,
+    //         ),
+    //         rbd_handle,
+    //     );
+    //
+    //     sim.physics.insert_collider_with_parent(
+    //         collider_from_desc(
+    //             id,
+    //             rbd_handle,
+    //             Affine2::from_translation(vec2(1.0, 0.0)),
+    //             desc,
+    //         ),
+    //         rbd_handle,
+    //     );
+    // }
 
     // Fixed Joint Test
     // {
@@ -254,7 +254,6 @@ async fn main() {
 
     let mut frame_index = 0;
     let mut sim = make_world(gravity);
-    // sim.physics.use_spatial_hash = true;
 
     let a = sim.balls.insert(TestObject {
         position: Vec2::ZERO,
@@ -300,7 +299,6 @@ async fn main() {
         position: Vec2::ZERO,
         color: GREEN,
     });
-
 
     let torque_test_rbd = spawn_rbd_entity(
         &mut sim.physics,
@@ -444,19 +442,39 @@ async fn main() {
         //     );
         // }
 
-        if is_key_down(KeyCode::E) {
+        {
+            let mut force = None;
+
+            if is_key_down(KeyCode::W) {
+                force = Some(vec2(0.0, 1.0));
+            }
+            if is_key_down(KeyCode::S) {
+                force = Some(vec2(0.0, -1.0));
+            }
+            if is_key_down(KeyCode::A) {
+                force = Some(vec2(-1.0, 0.0));
+            }
+            if is_key_down(KeyCode::D) {
+                force = Some(vec2(1.0, 0.0));
+            }
+
             let rbd = sim.physics.get_mut_rbd(torque_test_rbd).unwrap();
 
+            let force_point = if is_key_down(KeyCode::LeftShift) {
+                mouse_world
+            } else {
+                rbd.position
+            };
 
-            let force = vec2(0.0, 1.0);
-            rbd.apply_force_at_point(force, mouse_world);
+            if let Some(force) = force {
+                rbd.apply_force_at_point(force, force_point);
 
-            let a = mouse_world;
-            let b = a + force;
+                let a = force_point;
+                let b = a + force;
 
-            draw_line(a.x, a.y, b.x, b.y, 0.2, RED);
+                draw_line(a.x, a.y, b.x, b.y, 0.2, RED);
+            }
         }
-
         let debug = sim.physics.debug_data();
 
         for collider in debug.colliders.iter() {
@@ -483,6 +501,10 @@ async fn main() {
         }
 
         for body in debug.bodies.iter() {
+            if body.transform.translation.distance(mouse_world) < 0.1 {
+                continue;
+            }
+
             let r = 0.5;
             draw_circle(body.transform.translation, r, PINK.alpha(0.5));
 
