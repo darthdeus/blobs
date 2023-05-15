@@ -68,13 +68,13 @@ impl RigidBody {
         }
     }
 
-    pub fn apply_force_at_point(&mut self, force: Vec2, point: Vec2) {
+    pub fn apply_force_at_point(&mut self, force: Vec2, world_point: Vec2) {
         if !self.is_static() {
             // Apply linear force
             self.apply_force(force);
 
             // Apply rotational force (torque)
-            let lever_arm = point - self.position;
+            let lever_arm = world_point - self.position;
             // 2d cross product?
             self.torque += lever_arm.perp_dot(force);
         }
