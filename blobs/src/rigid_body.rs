@@ -15,15 +15,12 @@ impl Deref for RigidBodyHandle {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct RbdHandleComponent(pub RigidBodyHandle);
-
 #[derive(Clone, Debug)]
 pub struct RigidBody {
     pub position: Vec2,
     pub position_old: Vec2,
 
-    pub mass: f32,
+    pub calculated_mass: f32,
     pub gravity_mod: f32,
 
     // in radians
@@ -64,7 +61,7 @@ impl RigidBody {
     pub fn apply_force(&mut self, force: Vec2) {
         if !self.is_static() {
             // Convert force to acceleration (F = ma, so a = F/m)
-            self.acceleration += force / self.mass;
+            self.acceleration += force / self.calculated_mass;
         }
     }
 
@@ -182,7 +179,6 @@ impl RigidBodySet {
 pub struct RigidBodyBuilder {
     position: Vec2,
     position_old: Vec2,
-    mass: f32,
     gravity_mod: f32,
     rotation: f32,
     scale: Vec2,
@@ -200,7 +196,6 @@ impl RigidBodyBuilder {
         Self {
             position: Vec2::new(0.0, 0.0),
             position_old: Vec2::new(0.0, 0.0),
-            mass: 1.0,
             gravity_mod: 1.0,
             rotation: 0.0,
             scale: Vec2::new(1.0, 1.0),
@@ -217,11 +212,6 @@ impl RigidBodyBuilder {
     pub fn position(mut self, position: Vec2) -> Self {
         self.position_old = position;
         self.position = position;
-        self
-    }
-
-    pub fn mass(mut self, mass: f32) -> Self {
-        self.mass = mass;
         self
     }
 
@@ -279,10 +269,10 @@ impl RigidBodyBuilder {
         RigidBody {
             position: self.position,
             position_old: self.position_old,
-            mass: self.mass,
             gravity_mod: self.gravity_mod,
             rotation: self.rotation,
 
+            calculated_mass: 1.0,
             angular_velocity: 0.0,
             torque: 0.0,
             inertia: 1.0,

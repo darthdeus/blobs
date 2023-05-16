@@ -101,7 +101,6 @@ pub fn rbd_from_desc(id: Index, desc: RigidBodyDesc) -> RigidBody {
 
     RigidBodyBuilder::new()
         .position(desc.position)
-        .mass(desc.mass)
         .gravity_mod(desc.gravity_mod)
         .velocity_request(desc.initial_velocity.unwrap_or(Vec2::ZERO))
         .body_type(desc.body_type)

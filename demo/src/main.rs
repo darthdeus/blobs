@@ -51,7 +51,7 @@ fn make_world(gravity: Vec2) -> Simulation {
         radius: 4.0,
     });
 
-    let mut sim = Simulation::new(blob_physics);
+    let sim = Simulation::new(blob_physics);
 
     // {
     //     let spacing = 0.3;

@@ -350,7 +350,7 @@ impl Physics {
     }
 
     fn mass_ratio(a: &RigidBody, b: &RigidBody) -> f32 {
-        1.0 - a.mass / (a.mass + b.mass)
+        1.0 - a.calculated_mass / (a.calculated_mass + b.calculated_mass)
     }
 
     fn update_objects(&mut self, dt: f32) {
@@ -506,17 +506,17 @@ impl Physics {
                 let off_by = distance - joint.distance;
                 let correction = off_by * delta_position / distance;
 
-                assert!(body_a.mass > 0.0);
-                assert!(body_b.mass > 0.0);
+                assert!(body_a.calculated_mass > 0.0);
+                assert!(body_b.calculated_mass > 0.0);
 
-                let inv_mass_sum = body_a.mass.recip() + body_b.mass.recip();
+                let inv_mass_sum = body_a.calculated_mass.recip() + body_b.calculated_mass.recip();
 
                 if body_a.is_static() {
                     body_b.position -= inv_mass_sum * correction;
                 } else if body_b.is_static() {
                     body_a.position += inv_mass_sum * correction;
                 } else {
-                    let ratio = body_a.mass.recip() / inv_mass_sum;
+                    let ratio = body_a.calculated_mass.recip() / inv_mass_sum;
 
                     body_a.position += ratio * correction;
                     body_b.position -= (1.0 - ratio) * correction;
