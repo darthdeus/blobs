@@ -45,8 +45,6 @@ pub struct RigidBody {
     pub user_data: u128,
 
     pub body_type: RigidBodyType,
-    // TODO: remove
-    // pub collision_groups: InteractionGroups,
 }
 
 impl RigidBody {
@@ -286,7 +284,6 @@ impl RigidBodyBuilder {
             connected_joints: self.connected_joints,
             user_data: self.user_data,
             body_type: self.body_type,
-            // collision_groups: self.collision_groups,
         }
     }
 }
