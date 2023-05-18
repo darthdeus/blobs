@@ -21,6 +21,10 @@ pub struct Physics {
     pub collision_recv: Receiver<CollisionEvent>,
     // pub contact_force_recv: Receiver<ContactForceEvent>,
 
+    // Quick way to disable all collision calculations,
+    // useful for testing/measurements.
+    pub collisions_enabled: bool,
+
     // Fixed timestep
     pub accumulator: f64,
     pub time: f64,
@@ -48,6 +52,8 @@ impl Physics {
 
             collision_send: send,
             collision_recv: recv,
+
+            collisions_enabled: true,
 
             accumulator: 0.0,
             time: 0.0,
@@ -439,10 +445,12 @@ impl Physics {
                 spring.apply_force(&mut self.rbd_set);
             }
 
-            if self.use_spatial_hash {
-                self.spatial_collisions();
-            } else {
-                self.brute_force_collisions();
+            if self.collisions_enabled {
+                if self.use_spatial_hash {
+                    self.spatial_collisions();
+                } else {
+                    self.brute_force_collisions();
+                }
             }
 
             self.solve_fixed_joints(step_delta);
