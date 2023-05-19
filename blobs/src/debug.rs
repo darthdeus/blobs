@@ -52,25 +52,27 @@ pub(crate) fn make_debug_data(physics: &Physics) -> DebugData {
         })
         .collect();
 
-    let colliders = physics
-        .col_set
-        .arena
-        .iter()
-        .map(|(_, collider)| {
-            let radius = match collider.shape.as_ball() {
-                Some(ball) => ball.radius,
-                None => {
-                    println!("Invalid shape, expected ball");
-                    1.0
-                }
-            };
+    let colliders = vec![];
 
-            DebugCollider {
-                transform: collider.absolute_transform,
-                radius,
-            }
-        })
-        .collect();
+    // let colliders = physics
+    //     .col_set
+    //     .arena
+    //     .iter()
+    //     .map(|(_, collider)| {
+    //         let radius = match collider.shape.as_ball() {
+    //             Some(ball) => ball.radius,
+    //             None => {
+    //                 println!("Invalid shape, expected ball");
+    //                 1.0
+    //             }
+    //         };
+    //
+    //         DebugCollider {
+    //             transform: collider.absolute_transform,
+    //             radius,
+    //         }
+    //     })
+    //     .collect();
 
     let springs = physics
         .springs

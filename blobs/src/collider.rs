@@ -68,7 +68,7 @@ impl Default for ColliderFlags {
 }
 
 pub struct ColliderSet {
-    pub arena: Arena<Collider>,
+    arena: Arena<Collider>,
 }
 
 impl ColliderSet {
@@ -84,6 +84,20 @@ impl ColliderSet {
 
     pub fn get_mut(&mut self, handle: ColliderHandle) -> Option<&mut Collider> {
         self.arena.get_mut(handle.0)
+    }
+
+    pub fn get2_mut(
+        &mut self,
+        handle_a: ColliderHandle,
+        handle_b: ColliderHandle,
+    ) -> (Option<&mut Collider>, Option<&mut Collider>) {
+        self.arena.get2_mut(handle_a.0, handle_b.0)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (ColliderHandle, &Collider)> {
+        self.arena
+            .iter()
+            .map(|(idx, col)| (ColliderHandle(idx), col))
     }
 
     pub fn len(&self) -> usize {
