@@ -75,6 +75,14 @@ impl RigidBody {
         }
     }
 
+    /// Unlike apply_force_at_point this only applies torque.
+    pub fn apply_torque_at_point(&mut self, force: Vec2, world_point: Vec2) {
+        if !self.is_static() {
+            let lever_arm = world_point - self.position;
+            self.torque += lever_arm.perp_dot(force);
+        }
+    }
+
     pub fn set_velocity(&mut self, velocity: Vec2) {
         self.velocity_request = Some(velocity);
     }
