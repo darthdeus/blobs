@@ -126,6 +126,14 @@ impl Physics {
         col_handle
     }
 
+    pub fn rbd_position(&self, handle: RigidBodyHandle) -> Option<Vec2> {
+        self.rbd_set.get(handle).map(|x| x.position)
+    }
+
+    pub fn col_position(&self, handle: ColliderHandle) -> Option<Vec2> {
+        self.col_set.get(handle).map(|x| x.absolute_translation())
+    }
+
     pub fn remove_col(&mut self, handle: ColliderHandle) {
         self.col_set.remove(handle, &mut self.rbd_set);
     }
@@ -255,6 +263,9 @@ impl Physics {
                         distance = axis.length();
                     }
 
+                    let impact_vel_a = rbd_a.calculated_velocity;
+                    let impact_vel_b = rbd_b.calculated_velocity;
+
                     if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
                         let n = axis / distance;
                         assert!(!n.is_nan());
@@ -269,11 +280,12 @@ impl Physics {
                     count += 1;
 
                     self.collision_send
-                        .send(CollisionEvent::Started(
-                            *idx_a,
-                            *idx_b,
-                            CollisionEventFlags::empty(),
-                        ))
+                        .send(CollisionEvent {
+                            col_handle_a: *idx_a,
+                            col_handle_b: *idx_b,
+                            impact_vel_a,
+                            impact_vel_b,
+                        })
                         .unwrap();
                 }
             }

@@ -67,13 +67,22 @@ pub trait Shape: 'static + Debug {
     fn as_cuboid(&self) -> Option<&Cuboid>;
 }
 
-#[derive(Copy, Clone, Hash, Debug)]
-/// Events occurring when two colliders start or stop colliding
-pub enum CollisionEvent {
-    /// Event occurring when two colliders start colliding
-    Started(ColliderHandle, ColliderHandle, CollisionEventFlags),
-    /// Event occurring when two colliders stop colliding.
-    Stopped(ColliderHandle, ColliderHandle, CollisionEventFlags),
+// #[derive(Copy, Clone, Hash, Debug)]
+// /// Events occurring when two colliders start or stop colliding
+// pub enum CollisionEvent {
+//     /// Event occurring when two colliders start colliding
+//     Started(ColliderHandle, ColliderHandle, CollisionEventFlags),
+//     /// Event occurring when two colliders stop colliding.
+//     Stopped(ColliderHandle, ColliderHandle, CollisionEventFlags),
+// }
+
+#[derive(Copy, Clone, Debug)]
+pub struct CollisionEvent {
+    pub col_handle_a: ColliderHandle,
+    pub col_handle_b: ColliderHandle,
+
+    pub impact_vel_a: Vec2,
+    pub impact_vel_b: Vec2,
 }
 
 bitflags::bitflags! {
