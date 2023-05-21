@@ -387,7 +387,7 @@ impl Physics {
             body.position += displacement + body.acceleration * dt * dt;
 
             // TODO: calculate properly
-            body.inertia = 5.0;
+            body.inertia = 20.0;
             body.angular_velocity += body.torque / body.inertia * dt;
             body.rotation += body.angular_velocity * dt;
             body.torque = 0.0;
