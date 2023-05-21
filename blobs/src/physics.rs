@@ -126,6 +126,10 @@ impl Physics {
         col_handle
     }
 
+    pub fn remove_col(&mut self, handle: ColliderHandle) {
+        self.col_set.remove(handle, &mut self.rbd_set);
+    }
+
     pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
         if let Some(rbd) = self.rbd_set.get(handle) {
             for col_handle in rbd.colliders() {
