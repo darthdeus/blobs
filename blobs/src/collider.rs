@@ -69,12 +69,15 @@ impl Default for ColliderFlags {
 
 pub struct ColliderSet {
     arena: Arena<Collider>,
+
+    pub group_arenas: HashMap<Group, Arena<ColliderHandle>>,
 }
 
 impl ColliderSet {
     pub fn new() -> Self {
         Self {
             arena: Arena::new(),
+            group_arenas: HashMap::new(),
         }
     }
 
@@ -126,14 +129,28 @@ impl ColliderSet {
         rbd_handle: RigidBodyHandle,
         rbd_set: &mut RigidBodySet,
     ) -> ColliderHandle {
+        let col_group = collider.collision_groups.memberships;
+
         let col_handle = self.arena.insert(collider);
+        let col_handle = ColliderHandle(col_handle);
 
         if let Some(rbd) = rbd_set.get_mut(rbd_handle) {
-            rbd.colliders.push(ColliderHandle(col_handle));
+            rbd.colliders.push(col_handle);
         }
-        // TODO: insert into rbd
 
-        ColliderHandle(col_handle)
+        for i in 0..32 {
+            if col_group.intersects(Group::from_bits(1 << i).unwrap()) {
+                self.group_arenas
+                    .entry(col_group)
+                    .or_default()
+                    .insert(col_handle);
+            }
+        }
+
+        // TODO: insert into collider
+        // TODO: handle deletion
+
+        col_handle
     }
 }
 
