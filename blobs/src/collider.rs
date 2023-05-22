@@ -55,27 +55,13 @@ impl Collider {
 pub struct ColliderHandle(pub Index);
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-/// A set of flags for controlling collision/intersection filtering,
-/// modification, and events.
 pub struct ColliderFlags {
     pub is_sensor: bool,
-    // pub active_collision_types: ActiveCollisionTypes,
-    // pub collision_groups: InteractionGroups,
-    // pub solver_groups: InteractionGroups,
-    // pub active_hooks: ActiveHooks,
-    // pub active_events: ActiveEvents,
 }
 
 impl Default for ColliderFlags {
     fn default() -> Self {
-        Self {
-            is_sensor: false,
-            // active_collision_types: ActiveCollisionTypes::default(),
-            // collision_groups: InteractionGroups::all(),
-            // solver_groups: InteractionGroups::all(),
-            // active_hooks: ActiveHooks::empty(),
-            // active_events: ActiveEvents::empty(),
-        }
+        Self { is_sensor: false }
     }
 }
 

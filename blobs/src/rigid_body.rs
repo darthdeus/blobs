@@ -79,8 +79,6 @@ impl RigidBody {
         }
 
         self.center_of_mass = weighted_centers / self.calculated_mass;
-        // println!("Mass: {}", self.calculated_mass);
-        // println!("Inertia: {}", self.inertia);
     }
 
     pub fn apply_impulse(&mut self, impulse: Vec2) {
@@ -96,7 +94,7 @@ impl RigidBody {
             self.apply_impulse(impulse);
 
             // Apply rotational impulse (angular impulse)
-            let lever_arm = world_point - self.position;
+            let lever_arm = world_point - (self.position + self.center_of_mass);
             // 2d cross product?
             let angular_impulse = lever_arm.perp_dot(impulse);
             // Convert angular impulse to angular velocity change (J = Iω, so Δω = J/I)
@@ -121,7 +119,7 @@ impl RigidBody {
             self.apply_force(force);
 
             // Apply rotational force (torque)
-            let lever_arm = world_point - self.position;
+            let lever_arm = world_point - (self.position + self.center_of_mass);
             // 2d cross product?
             self.torque += lever_arm.perp_dot(force);
         }
@@ -130,7 +128,7 @@ impl RigidBody {
     /// Unlike apply_force_at_point this only applies torque.
     pub fn apply_torque_at_point(&mut self, force: Vec2, world_point: Vec2) {
         if !self.is_static() {
-            let lever_arm = world_point - self.position;
+            let lever_arm = world_point - (self.position + self.center_of_mass);
             self.torque += lever_arm.perp_dot(force);
         }
     }
