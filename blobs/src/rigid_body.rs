@@ -20,6 +20,9 @@ pub struct RigidBody {
     pub position: Vec2,
     pub position_old: Vec2,
 
+    /// Represented as offset from `position`
+    pub center_of_mass: Vec2,
+
     pub calculated_mass: f32,
     pub gravity_mod: f32,
 
@@ -60,15 +63,22 @@ impl RigidBody {
         self.calculated_mass = 0.0;
         self.inertia = 0.0;
 
+        let mut weighted_centers = Vec2::ZERO;
+
         for col_handle in self.colliders.iter() {
             if let Some(collider) = &col_set.get(*col_handle) {
-                self.calculated_mass += collider.mass();
+                let mass = collider.mass();
+
+                self.calculated_mass += mass;
                 self.inertia += collider.inertia();
+
+                weighted_centers += collider.offset.translation * mass;
             } else {
                 eprintln!("Collider {:?} not found in collider set", col_handle);
             }
         }
 
+        self.center_of_mass = weighted_centers / self.calculated_mass;
         // println!("Mass: {}", self.calculated_mass);
         // println!("Inertia: {}", self.inertia);
     }
@@ -213,15 +223,11 @@ impl RigidBodySet {
             push_event(Event {
                 time_data: *self.time_data,
                 position: None,
-                message: "rbd removed because colliders.len() == 0".into(),
+                message: "removing a non-existent rigid body".into(),
                 severity: Severity::Error,
                 col_handle: None,
                 rbd_handle: Some(handle),
             });
-            eprintln!(
-                "Trying to remove a rbd that doesn't exit anymore, id: {:?}",
-                handle.0
-            );
         }
     }
 
@@ -329,6 +335,8 @@ impl RigidBodyBuilder {
             position_old: self.position_old,
             gravity_mod: self.gravity_mod,
             rotation: self.rotation,
+
+            center_of_mass: Vec2::ZERO,
 
             calculated_mass: 1.0,
             angular_velocity: 0.0,

@@ -127,6 +127,8 @@ impl ColliderSet {
     }
 
     pub fn remove(&mut self, handle: ColliderHandle, rbd_set: &mut RigidBodySet) {
+        let mut remove_rbd = false;
+
         if let Some(collider) = self.arena.get(handle.0) {
             if let Some(parent) = collider.parent {
                 if let Some(body) = rbd_set.arena.get_mut(parent.0) {
@@ -134,6 +136,8 @@ impl ColliderSet {
                     body.update_mass_and_inertia(self);
 
                     if body.colliders.len() == 0 {
+                        remove_rbd = true;
+
                         push_event(Event {
                             time_data: *self.time_data,
                             position: Some(body.position),
@@ -143,6 +147,10 @@ impl ColliderSet {
                             rbd_handle: Some(parent),
                         });
                     }
+                }
+
+                if remove_rbd {
+                    rbd_set.remove_rbd(parent);
                 }
             }
         }
