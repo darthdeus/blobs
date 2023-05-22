@@ -56,6 +56,48 @@ impl RigidBody {
         self.position
     }
 
+    pub fn update_mass_and_inertia(&mut self, col_set: &ColliderSet) {
+        self.calculated_mass = 0.0;
+        self.inertia = 0.0;
+
+        for col_handle in self.colliders.iter() {
+            if let Some(collider) = &col_set.get(*col_handle) {
+                self.calculated_mass += collider.mass();
+                self.inertia += collider.inertia();
+            } else {
+                eprintln!("Collider {:?} not found in collider set", col_handle);
+            }
+        }
+
+        // println!("Mass: {}", self.calculated_mass);
+        // println!("Inertia: {}", self.inertia);
+    }
+
+    pub fn apply_impulse(&mut self, impulse: Vec2) {
+        if !self.is_static() {
+            // Convert impulse to velocity change (J = mv, so Δv = J/m)
+            self.add_velocity(impulse / self.calculated_mass);
+        }
+    }
+
+    pub fn apply_impulse_at_point(&mut self, impulse: Vec2, world_point: Vec2) {
+        if !self.is_static() {
+            // Apply linear impulse
+            self.apply_impulse(impulse);
+
+            // Apply rotational impulse (angular impulse)
+            let lever_arm = world_point - self.position;
+            // 2d cross product?
+            let angular_impulse = lever_arm.perp_dot(impulse);
+            // Convert angular impulse to angular velocity change (J = Iω, so Δω = J/I)
+            self.angular_velocity += angular_impulse / self.inertia;
+        }
+    }
+
+    pub fn add_velocity(&mut self, velocity: Vec2) {
+        self.set_velocity(self.get_velocity() + velocity);
+    }
+
     pub fn apply_force(&mut self, force: Vec2) {
         if !self.is_static() {
             // Convert force to acceleration (F = ma, so a = F/m)

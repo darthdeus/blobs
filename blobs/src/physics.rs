@@ -117,11 +117,14 @@ impl Physics {
             .col_set
             .insert_with_parent(collider, rbd_handle, &mut self.rbd_set);
 
-        self.rbd_set
+        let rbd = self
+            .rbd_set
             .get_mut(rbd_handle)
-            .expect("parent rigid body must exist when inserting collider")
-            .colliders
-            .push(col_handle);
+            .expect("parent rigid body must exist when inserting collider");
+
+        rbd.colliders.push(col_handle);
+
+        rbd.update_mass_and_inertia(&self.col_set);
 
         col_handle
     }
@@ -399,7 +402,6 @@ impl Physics {
             body.position += displacement + body.acceleration * dt * dt;
 
             // TODO: calculate properly
-            body.inertia = 20.0;
             body.angular_velocity += body.torque / body.inertia * dt;
             body.rotation += body.angular_velocity * dt;
             body.torque = 0.0;

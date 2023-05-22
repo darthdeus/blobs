@@ -30,6 +30,18 @@ impl Collider {
             .angle_between(up)
     }
 
+    pub fn mass(&self) -> f32 {
+        self.radius * 2.0
+    }
+
+    pub fn inertia(&self) -> f32 {
+        let mass = self.mass();
+        let d = self.offset.translation.length();
+        let inertia = 0.5 * mass * self.radius.powi(2);
+
+        inertia + mass * d.powi(2)
+    }
+
     pub fn absolute_translation(&self) -> Vec2 {
         self.absolute_transform.translation
     }
@@ -116,6 +128,7 @@ impl ColliderSet {
             if let Some(parent) = collider.parent {
                 if let Some(body) = rbd_set.arena.get_mut(parent.0) {
                     body.colliders.retain(|&h| h != handle);
+                    body.update_mass_and_inertia(self);
                 }
             }
         }
