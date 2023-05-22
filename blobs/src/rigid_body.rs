@@ -188,12 +188,14 @@ pub enum RigidBodyType {
 }
 
 pub struct RigidBodySet {
+    time_data: Rc<TimeData>,
     pub arena: Arena<RigidBody>,
 }
 
 impl RigidBodySet {
-    pub fn new() -> Self {
+    pub fn new(time_data: Rc<TimeData>) -> Self {
         Self {
+            time_data,
             arena: Arena::new(),
         }
     }
@@ -208,6 +210,14 @@ impl RigidBodySet {
 
     pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
         if self.arena.remove(handle.0).is_none() {
+            push_event(Event {
+                time_data: *self.time_data,
+                position: None,
+                message: "rbd removed because colliders.len() == 0".into(),
+                severity: Severity::Error,
+                col_handle: None,
+                rbd_handle: Some(handle),
+            });
             eprintln!(
                 "Trying to remove a rbd that doesn't exit anymore, id: {:?}",
                 handle.0

@@ -1,6 +1,8 @@
 use crate::*;
 
 pub struct Physics {
+    pub time_data: Rc<TimeData>,
+
     pub gravity: Vec2,
 
     pub substeps: u32,
@@ -34,18 +36,21 @@ impl Physics {
     pub fn new(gravity: Vec2, use_spatial_hash: bool) -> Self {
         let (send, recv) = std::sync::mpsc::channel();
 
+        let time_data = Rc::new(TimeData::new());
+
         Self {
             gravity,
+            time_data: time_data.clone(),
 
             substeps: 8,
             joint_iterations: 4,
 
-            rbd_set: RigidBodySet::new(),
-            col_set: ColliderSet::new(),
+            rbd_set: RigidBodySet::new(time_data.clone()),
+            col_set: ColliderSet::new(time_data.clone()),
             joints: Arena::new(),
             springs: Arena::new(),
 
-            query_pipeline: QueryPipeline::new(),
+            query_pipeline: QueryPipeline::new(time_data),
 
             use_spatial_hash,
             constraints: vec![],
@@ -401,8 +406,9 @@ impl Physics {
             body.position_old = body.position;
             body.position += displacement + body.acceleration * dt * dt;
 
-            // TODO: calculate properly
             body.angular_velocity += body.torque / body.inertia * dt;
+            debug_assert!(!body.angular_velocity.is_nan());
+
             body.rotation += body.angular_velocity * dt;
             body.torque = 0.0;
 

@@ -80,14 +80,17 @@ impl Default for ColliderFlags {
 }
 
 pub struct ColliderSet {
+    time_data: Rc<TimeData>,
+
     arena: Arena<Collider>,
 
     pub group_arenas: HashMap<Group, Arena<ColliderHandle>>,
 }
 
 impl ColliderSet {
-    pub fn new() -> Self {
+    pub fn new(time_data: Rc<TimeData>) -> Self {
         Self {
+            time_data,
             arena: Arena::new(),
             group_arenas: HashMap::new(),
         }
@@ -129,6 +132,17 @@ impl ColliderSet {
                 if let Some(body) = rbd_set.arena.get_mut(parent.0) {
                     body.colliders.retain(|&h| h != handle);
                     body.update_mass_and_inertia(self);
+
+                    if body.colliders.len() == 0 {
+                        push_event(Event {
+                            time_data: *self.time_data,
+                            position: Some(body.position),
+                            message: "rbd removed because colliders.len() == 0".into(),
+                            severity: Severity::Info,
+                            col_handle: Some(handle),
+                            rbd_handle: Some(parent),
+                        });
+                    }
                 }
             }
         }

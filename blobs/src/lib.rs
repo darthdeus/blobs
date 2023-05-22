@@ -10,6 +10,7 @@ pub use atomic_refcell::{AtomicRef, AtomicRefCell};
 pub use once_cell::sync::Lazy;
 pub use std::borrow::Cow;
 pub use std::collections::HashMap;
+pub use std::rc::Rc;
 
 use glam::*;
 pub use hecs::*;
@@ -19,6 +20,7 @@ use thunderdome::{Arena, Index};
 
 mod collider;
 mod debug;
+mod events;
 mod groups;
 mod joints;
 mod physics;
@@ -30,6 +32,7 @@ mod tests;
 
 pub use crate::collider::*;
 pub use crate::debug::*;
+pub use crate::events::*;
 pub use crate::groups::*;
 pub use crate::joints::*;
 pub use crate::physics::*;
@@ -67,15 +70,6 @@ pub trait Shape: 'static + Debug {
     fn as_cuboid(&self) -> Option<&Cuboid>;
 }
 
-// #[derive(Copy, Clone, Hash, Debug)]
-// /// Events occurring when two colliders start or stop colliding
-// pub enum CollisionEvent {
-//     /// Event occurring when two colliders start colliding
-//     Started(ColliderHandle, ColliderHandle, CollisionEventFlags),
-//     /// Event occurring when two colliders stop colliding.
-//     Stopped(ColliderHandle, ColliderHandle, CollisionEventFlags),
-// }
-
 #[derive(Copy, Clone, Debug)]
 pub struct CollisionEvent {
     pub col_handle_a: ColliderHandle,
@@ -83,18 +77,6 @@ pub struct CollisionEvent {
 
     pub impact_vel_a: Vec2,
     pub impact_vel_b: Vec2,
-}
-
-bitflags::bitflags! {
-    /// Flags providing more information regarding a collision event.
-    pub struct CollisionEventFlags: u32 {
-        /// Flag set if at least one of the colliders involved in the
-        /// collision was a sensor when the event was fired.
-        const SENSOR = 0b0001;
-        /// Flag set if a `CollisionEvent::Stopped` was fired because
-        /// at least one of the colliders was removed.
-        const REMOVED = 0b0010;
-    }
 }
 
 pub struct Rotation {}
@@ -109,11 +91,14 @@ pub struct Cuboid {
     pub half_extents: Vec2,
 }
 
-pub struct QueryPipeline {}
+pub struct QueryPipeline {
+    #[allow(dead_code)]
+    time_data: Rc<TimeData>,
+}
 
 impl QueryPipeline {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(time_data: Rc<TimeData>) -> Self {
+        Self { time_data }
     }
 
     pub fn intersection_with_shape(
