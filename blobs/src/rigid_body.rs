@@ -15,6 +15,25 @@ impl Deref for RigidBodyHandle {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
+pub struct RigidBodyData {
+    pub position: Vec2,
+    pub center_of_mass: Vec2,
+    pub mass: f32,
+    pub rotation: f32,
+}
+
+impl Default for RigidBodyData {
+    fn default() -> Self {
+        Self {
+            position: Vec2::ZERO,
+            center_of_mass: Vec2::ZERO,
+            mass: 1.0,
+            rotation: 0.0,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct RigidBody {
     pub position: Vec2,
@@ -51,6 +70,15 @@ pub struct RigidBody {
 }
 
 impl RigidBody {
+    pub fn data(&self) -> RigidBodyData {
+        RigidBodyData {
+            position: self.position,
+            center_of_mass: self.center_of_mass,
+            mass: self.calculated_mass,
+            rotation: self.rotation,
+        }
+    }
+
     pub fn transform(&self) -> Affine2 {
         Affine2::from_angle_translation(self.rotation, self.position)
     }
