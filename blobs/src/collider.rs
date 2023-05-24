@@ -124,7 +124,7 @@ impl ColliderSet {
                     if body.colliders.len() == 0 {
                         remove_rbd = true;
 
-                        push_event(Event {
+                        push_event(PhysicsEvent {
                             time_data: *self.time_data,
                             position: Some(body.position),
                             message: "rbd removed because colliders.len() == 0".into(),

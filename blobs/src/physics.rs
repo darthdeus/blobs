@@ -103,6 +103,10 @@ impl Physics {
         self.rbd_set.len()
     }
 
+    pub fn get_col(&self, handle: ColliderHandle) -> Option<&Collider> {
+        self.col_set.get(handle)
+    }
+
     pub fn insert_rbd(&mut self, rbd: RigidBody) -> RigidBodyHandle {
         let position = rbd.position;
         // let radius = rbd.radius;

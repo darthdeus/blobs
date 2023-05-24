@@ -246,7 +246,7 @@ impl RigidBodySet {
 
     pub fn remove_rbd(&mut self, handle: RigidBodyHandle) {
         if self.arena.remove(handle.0).is_none() {
-            push_event(Event {
+            push_event(PhysicsEvent {
                 time_data: *self.time_data,
                 position: None,
                 message: "removing a non-existent rigid body".into(),

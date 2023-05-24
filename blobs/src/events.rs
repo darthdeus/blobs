@@ -21,7 +21,7 @@ static EVENT_HISTORY: Lazy<AtomicRefCell<EventHistory>> =
     Lazy::new(|| AtomicRefCell::new(EventHistory::new()));
 
 pub struct EventHistory {
-    pub events: VecDeque<Event>,
+    pub events: VecDeque<PhysicsEvent>,
 }
 
 impl EventHistory {
@@ -29,7 +29,7 @@ impl EventHistory {
         Self { events: VecDeque::new() }
     }
 
-    pub fn push(&mut self, event: Event) {
+    pub fn push(&mut self, event: PhysicsEvent) {
         self.events.push_back(event);
 
         // Limit queue to 1000 for now.
@@ -39,7 +39,7 @@ impl EventHistory {
     }
 }
 
-pub struct Event {
+pub struct PhysicsEvent {
     pub time_data: TimeData,
     pub position: Option<Vec2>,
     pub message: Cow<'static, str>,
@@ -59,6 +59,6 @@ pub enum Severity {
     Critical,
 }
 
-pub fn push_event(event: Event) {
+pub fn push_event(event: PhysicsEvent) {
     EVENT_HISTORY.borrow_mut().push(event);
 }
