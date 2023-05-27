@@ -420,6 +420,7 @@ impl Physics {
 
             body.acceleration = Vec2::ZERO;
             body.torque = 0.0;
+            // TODO: somehow isn't updated before first collision? 51345d0
             body.calculated_velocity = displacement / dt;
         }
 
