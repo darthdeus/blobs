@@ -95,6 +95,10 @@ impl RigidBody {
 
         for col_handle in self.colliders.iter() {
             if let Some(collider) = &col_set.get(*col_handle) {
+                if collider.is_sensor() {
+                    continue;
+                }
+
                 let mass = collider.mass();
 
                 self.calculated_mass += mass;
@@ -104,6 +108,14 @@ impl RigidBody {
             } else {
                 eprintln!("Collider {:?} not found in collider set", col_handle);
             }
+        }
+
+        if self.calculated_mass == 0.0 {
+            self.calculated_mass = 1.0;
+        }
+
+        if self.inertia == 0.0 {
+            self.inertia = 1.0;
         }
 
         self.center_of_mass = weighted_centers / self.calculated_mass;

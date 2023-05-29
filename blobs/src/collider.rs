@@ -42,6 +42,10 @@ impl Collider {
         inertia + mass * d.powi(2)
     }
 
+    pub fn is_sensor(&self) -> bool {
+        self.flags.is_sensor
+    }
+
     pub fn absolute_translation(&self) -> Vec2 {
         self.absolute_transform.translation
     }
