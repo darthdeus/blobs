@@ -89,12 +89,27 @@ impl AABB {
         Self { min, max }
     }
 
+    pub fn from_center_size(center: Vec2, size: Vec2) -> Self {
+        let half_size = size * 0.5;
+        Self {
+            min: center - half_size,
+            max: center + half_size,
+        }
+    }
+
     pub fn center(&self) -> Vec2 {
         (self.min + self.max) * 0.5
     }
 
     pub fn size(&self) -> Vec2 {
         self.max - self.min
+    }
+
+    pub fn contains(&self, point: Vec2) -> bool {
+        self.min.x <= point.x
+            && self.min.y <= point.y
+            && self.max.x >= point.x
+            && self.max.y >= point.y
     }
 
     pub fn expand_to_include_point(&mut self, point: Vec2) {
