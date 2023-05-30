@@ -18,6 +18,7 @@ impl Deref for RigidBodyHandle {
 #[derive(Copy, Clone, Debug)]
 pub struct RigidBodyData {
     pub position: Vec2,
+    pub velocity: Vec2,
     pub center_of_mass: Vec2,
     pub mass: f32,
     pub rotation: f32,
@@ -27,6 +28,7 @@ impl Default for RigidBodyData {
     fn default() -> Self {
         Self {
             position: Vec2::ZERO,
+            velocity: Vec2::ZERO,
             center_of_mass: Vec2::ZERO,
             mass: 1.0,
             rotation: 0.0,
@@ -73,9 +75,10 @@ impl RigidBody {
     pub fn data(&self) -> RigidBodyData {
         RigidBodyData {
             position: self.position,
+            velocity: self.calculated_velocity,
+            rotation: self.rotation,
             center_of_mass: self.center_of_mass,
             mass: self.calculated_mass,
-            rotation: self.rotation,
         }
     }
 
