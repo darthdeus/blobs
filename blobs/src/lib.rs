@@ -57,6 +57,13 @@ impl Shape for Ball {
     fn as_cuboid(&self) -> Option<&Cuboid> {
         None
     }
+
+    fn calculate_aabb(&self, transform: Affine2) -> AABB {
+        let min = transform.translation - vec2(self.radius, self.radius);
+        let max = transform.translation + vec2(self.radius, self.radius);
+
+        AABB::new(min, max)
+    }
 }
 
 impl Ball {
@@ -68,6 +75,37 @@ impl Ball {
 pub trait Shape: 'static + Debug {
     fn as_ball(&self) -> Option<&Ball>;
     fn as_cuboid(&self) -> Option<&Cuboid>;
+    fn calculate_aabb(&self, transform: Affine2) -> AABB;
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct AABB {
+    pub min: Vec2,
+    pub max: Vec2,
+}
+
+impl AABB {
+    pub fn new(min: Vec2, max: Vec2) -> Self {
+        Self { min, max }
+    }
+
+    pub fn center(&self) -> Vec2 {
+        (self.min + self.max) * 0.5
+    }
+
+    pub fn size(&self) -> Vec2 {
+        self.max - self.min
+    }
+
+    pub fn expand_to_include_point(&mut self, point: Vec2) {
+        self.min = self.min.min(point);
+        self.max = self.max.max(point);
+    }
+
+    pub fn expand_to_include_aabb(&mut self, other: &AABB) {
+        self.min = self.min.min(other.min);
+        self.max = self.max.max(other.max);
+    }
 }
 
 #[derive(Copy, Clone, Debug)]
