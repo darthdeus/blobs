@@ -53,6 +53,10 @@ impl Collider {
     pub fn shape(&self) -> &dyn Shape {
         &*self.shape
     }
+
+    pub fn calculate_aabb(&self) -> AABB {
+        self.shape.calculate_aabb(self.absolute_transform)
+    }
 }
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]

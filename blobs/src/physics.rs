@@ -91,6 +91,10 @@ impl Physics {
         }
     }
 
+    pub fn get_rbd_data(&self, handle: RigidBodyHandle) -> Option<RigidBodyData> {
+        self.rbd_set.get(handle).map(|x| x.data())
+    }
+
     pub fn get_rbd(&self, handle: RigidBodyHandle) -> Option<&RigidBody> {
         self.rbd_set.get(handle)
     }
