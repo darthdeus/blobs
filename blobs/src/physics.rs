@@ -30,6 +30,8 @@ pub struct Physics {
     // Fixed timestep
     pub accumulator: f64,
     pub time: f64,
+
+    pub old_dt: f32,
 }
 
 impl Physics {
@@ -63,6 +65,7 @@ impl Physics {
             accumulator: 0.0,
             time: 0.0,
             spatial_hash: SpatialHash::new(2.0),
+            old_dt: 1.0,
         }
     }
 
@@ -310,83 +313,6 @@ impl Physics {
         perf_counter_inc("collisions", count);
     }
 
-    // pub fn spatial_collisions(&mut self) {
-    //     panic!("spatial_collisions BREAKS COLLISIONS, use brute force");
-    //     let _span = tracy_span!("spatial_collisions");
-    //
-    //     let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
-    //     let mut count = 0;
-    //
-    //     for (_i, idx_a) in keys.iter().enumerate() {
-    //         let col_a = self.col_set.arena.get(*idx_a).unwrap();
-    //         let parent_a = col_a.parent.unwrap();
-    //         let rbd_a = self.rbd_set.arena.get(parent_a.0).unwrap();
-    //
-    //         const MAX_COLLIDER_RADIUS: f32 = 1.0;
-    //
-    //         let relevant_rigid_bodies = self
-    //             .spatial_hash
-    //             .query(rbd_a.position, col_a.radius + MAX_COLLIDER_RADIUS);
-    //
-    //         // for idx_b in keys.iter() {
-    //         //     let idx_b = *idx_b;
-    //         for cell_point in relevant_rigid_bodies {
-    //             let idx_b = Index::from_bits(cell_point.id).unwrap();
-    //
-    //             if let Some(col_b) = self.col_set.arena.get(idx_b) {
-    //                 if idx_a >= &idx_b {
-    //                     continue;
-    //                 }
-    //
-    //                 let parent_b = col_b.parent.unwrap();
-    //                 // let rbd_b =
-    //                 //     self.rbd_set.arena.get(parent_b.handle.0).unwrap();
-    //
-    //                 if !col_a.collision_groups.test(col_b.collision_groups) {
-    //                     continue;
-    //                 }
-    //
-    //                 let axis = col_a.absolute_translation() - col_b.absolute_translation();
-    //                 let distance = axis.length();
-    //                 let min_dist = col_a.radius + col_b.radius;
-    //
-    //                 if distance < min_dist {
-    //                     let parent_a_handle = parent_a.0;
-    //                     let parent_b_handle = parent_b.0;
-    //
-    //                     let (Some(rbd_a), Some(rbd_b)) = self
-    //                         .rbd_set
-    //                         .arena
-    //                         .get2_mut(parent_a_handle, parent_b_handle)
-    //                          else { continue; };
-    //
-    //                     if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
-    //                         let n = axis / distance;
-    //                         let delta = min_dist - distance;
-    //
-    //                         let ratio = Self::mass_ratio(rbd_a, rbd_b);
-    //
-    //                         rbd_a.position += ratio * delta * n;
-    //                         rbd_b.position -= (1.0 - ratio) * delta * n;
-    //                     }
-    //
-    //                     count += 1;
-    //
-    //                     self.collision_send
-    //                         .send(CollisionEvent::Started(
-    //                             ColliderHandle(*idx_a),
-    //                             ColliderHandle(idx_b),
-    //                             CollisionEventFlags::empty(),
-    //                         ))
-    //                         .unwrap();
-    //                 }
-    //             }
-    //         }
-    //     }
-    //
-    //     perf_counter_inc("collisions", count);
-    // }
-
     fn mass_ratio(a: &RigidBody, b: &RigidBody) -> f32 {
         1.0 - a.calculated_mass / (a.calculated_mass + b.calculated_mass)
     }
@@ -406,10 +332,11 @@ impl Physics {
                 body.position_old = body.position - req_velocity * dt;
             }
 
-            let displacement = body.position - body.position_old;
+            let displacement = (body.position - body.position_old) * (dt / self.old_dt);
+            self.old_dt = dt;
 
             self.spatial_hash
-                .move_point(idx.to_bits(), body.position - body.position_old);
+                .move_point(idx.to_bits(), displacement);
 
             body.position_old = body.position;
             body.position += displacement + body.acceleration * dt * dt;
@@ -606,4 +533,81 @@ impl Physics {
     pub fn debug_data(&self) -> DebugData {
         make_debug_data(self)
     }
+
+    // pub fn spatial_collisions(&mut self) {
+    //     panic!("spatial_collisions BREAKS COLLISIONS, use brute force");
+    //     let _span = tracy_span!("spatial_collisions");
+    //
+    //     let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
+    //     let mut count = 0;
+    //
+    //     for (_i, idx_a) in keys.iter().enumerate() {
+    //         let col_a = self.col_set.arena.get(*idx_a).unwrap();
+    //         let parent_a = col_a.parent.unwrap();
+    //         let rbd_a = self.rbd_set.arena.get(parent_a.0).unwrap();
+    //
+    //         const MAX_COLLIDER_RADIUS: f32 = 1.0;
+    //
+    //         let relevant_rigid_bodies = self
+    //             .spatial_hash
+    //             .query(rbd_a.position, col_a.radius + MAX_COLLIDER_RADIUS);
+    //
+    //         // for idx_b in keys.iter() {
+    //         //     let idx_b = *idx_b;
+    //         for cell_point in relevant_rigid_bodies {
+    //             let idx_b = Index::from_bits(cell_point.id).unwrap();
+    //
+    //             if let Some(col_b) = self.col_set.arena.get(idx_b) {
+    //                 if idx_a >= &idx_b {
+    //                     continue;
+    //                 }
+    //
+    //                 let parent_b = col_b.parent.unwrap();
+    //                 // let rbd_b =
+    //                 //     self.rbd_set.arena.get(parent_b.handle.0).unwrap();
+    //
+    //                 if !col_a.collision_groups.test(col_b.collision_groups) {
+    //                     continue;
+    //                 }
+    //
+    //                 let axis = col_a.absolute_translation() - col_b.absolute_translation();
+    //                 let distance = axis.length();
+    //                 let min_dist = col_a.radius + col_b.radius;
+    //
+    //                 if distance < min_dist {
+    //                     let parent_a_handle = parent_a.0;
+    //                     let parent_b_handle = parent_b.0;
+    //
+    //                     let (Some(rbd_a), Some(rbd_b)) = self
+    //                         .rbd_set
+    //                         .arena
+    //                         .get2_mut(parent_a_handle, parent_b_handle)
+    //                          else { continue; };
+    //
+    //                     if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
+    //                         let n = axis / distance;
+    //                         let delta = min_dist - distance;
+    //
+    //                         let ratio = Self::mass_ratio(rbd_a, rbd_b);
+    //
+    //                         rbd_a.position += ratio * delta * n;
+    //                         rbd_b.position -= (1.0 - ratio) * delta * n;
+    //                     }
+    //
+    //                     count += 1;
+    //
+    //                     self.collision_send
+    //                         .send(CollisionEvent::Started(
+    //                             ColliderHandle(*idx_a),
+    //                             ColliderHandle(idx_b),
+    //                             CollisionEventFlags::empty(),
+    //                         ))
+    //                         .unwrap();
+    //                 }
+    //             }
+    //         }
+    //     }
+    //
+    //     perf_counter_inc("collisions", count);
+    // }
 }
