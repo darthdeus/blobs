@@ -227,7 +227,8 @@ impl AffineExtensions for Affine2 {
     fn angle(&self) -> f32 {
         // NOTE: This breaks if the transform has a scale or shear component
         let up = vec2(0.0, 1.0);
-        up.angle_between(self.transform_vector2(up))
+        // up.angle_between(self.transform_vector2(up))
+        self.transform_vector2(up).angle_between(up)
     }
 
     fn angle_dir(&self) -> Vec2 {

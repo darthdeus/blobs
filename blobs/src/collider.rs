@@ -22,12 +22,17 @@ impl Collider {
         self.offset.translation
     }
 
-    pub fn absolute_rotation(&self) -> f32 {
-        let up = vec2(0.0, 1.0);
+    pub fn relative_rotation(&self) -> f32 {
+        self.offset.angle()
+    }
 
-        self.absolute_transform
-            .transform_vector2(up)
-            .angle_between(up)
+    pub fn absolute_rotation(&self) -> f32 {
+        self.absolute_transform.angle()
+        // let up = vec2(0.0, 1.0);
+        //
+        // self.absolute_transform
+        //     .transform_vector2(up)
+        //     .angle_between(up)
     }
 
     pub fn mass(&self) -> f32 {
@@ -56,6 +61,10 @@ impl Collider {
 
     pub fn calculate_aabb(&self) -> AABB {
         self.shape.calculate_aabb(self.absolute_transform)
+    }
+
+    pub fn calculate_relative_aabb(&self) -> AABB {
+        self.shape.calculate_aabb(self.offset)
     }
 }
 
