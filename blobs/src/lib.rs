@@ -89,6 +89,13 @@ impl AABB {
         Self { min, max }
     }
 
+    pub fn from_top_left(top_left: Vec2, size: Vec2) -> Self {
+        Self::from_center_size(
+            vec2(top_left.x + size.x / 2.0, top_left.y - size.y / 2.0),
+            size,
+        )
+    }
+
     pub fn from_center_size(center: Vec2, size: Vec2) -> Self {
         let half_size = size * 0.5;
         Self {
