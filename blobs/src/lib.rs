@@ -89,6 +89,13 @@ impl AABB {
         Self { min, max }
     }
 
+    pub fn from_two_points(a: Vec2, b: Vec2) -> Self {
+        Self {
+            min: a.min(b),
+            max: a.max(b),
+        }
+    }
+
     pub fn from_top_left(top_left: Vec2, size: Vec2) -> Self {
         Self::from_center_size(
             vec2(top_left.x + size.x / 2.0, top_left.y - size.y / 2.0),
