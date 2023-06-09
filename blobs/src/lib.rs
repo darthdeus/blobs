@@ -126,6 +126,13 @@ impl AABB {
             && self.max.y >= point.y
     }
 
+    pub fn intersects(&self, other: &AABB) -> bool {
+        self.min.x <= other.max.x
+            && self.max.x >= other.min.x
+            && self.min.y <= other.max.y
+            && self.max.y >= other.min.y
+    }
+
     pub fn expand_to_include_point(&mut self, point: Vec2) {
         self.min = self.min.min(point);
         self.max = self.max.max(point);
