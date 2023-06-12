@@ -120,6 +120,7 @@ pub fn collider_from_desc(
         user_data: id.to_bits() as u128,
         parent: Some(parent),
         radius: desc.radius,
+        mass_override: None,
         flags: ColliderFlags {
             is_sensor: desc.is_sensor,
         },

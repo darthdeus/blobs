@@ -298,6 +298,10 @@ impl Physics {
 
                     count += 1;
 
+                    // if col_a.flags.is_sensor || col_b.flags.is_sensor {
+                    //     continue;
+                    // }
+
                     self.collision_send
                         .send(CollisionEvent {
                             col_handle_a: *idx_a,

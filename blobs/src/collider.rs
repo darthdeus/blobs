@@ -10,6 +10,8 @@ pub struct Collider {
 
     pub radius: f32,
 
+    pub mass_override: Option<f32>,
+
     pub flags: ColliderFlags,
 
     pub collision_groups: InteractionGroups,
@@ -36,7 +38,7 @@ impl Collider {
     }
 
     pub fn mass(&self) -> f32 {
-        self.radius * 2.0
+        self.mass_override.unwrap_or(self.radius * 2.0)
     }
 
     pub fn inertia(&self) -> f32 {
@@ -198,6 +200,7 @@ pub struct ColliderBuilder {
     user_data: u128,
     parent: Option<RigidBodyHandle>,
     radius: f32,
+    mass_override: Option<f32>,
     flags: ColliderFlags,
     collision_groups: InteractionGroups,
     shape: Box<dyn Shape>,
@@ -211,6 +214,7 @@ impl ColliderBuilder {
             user_data: 0,
             parent: None,
             radius: 0.5,
+            mass_override: None,
             flags: ColliderFlags::default(),
             collision_groups: InteractionGroups::default(),
             shape: Box::new(Ball::new(0.5)),
@@ -224,6 +228,11 @@ impl ColliderBuilder {
 
     pub fn absolute_transform(mut self, absolute_transform: Affine2) -> Self {
         self.absolute_transform = absolute_transform;
+        self
+    }
+
+    pub fn mass_override(mut self, mass_override: f32) -> Self {
+        self.mass_override = Some(mass_override);
         self
     }
 
@@ -263,6 +272,7 @@ impl ColliderBuilder {
             absolute_transform: self.absolute_transform,
             user_data: self.user_data,
             parent: self.parent,
+            mass_override: self.mass_override,
             radius: self.radius,
             flags: self.flags,
             collision_groups: self.collision_groups,
