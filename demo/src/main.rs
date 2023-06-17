@@ -1,8 +1,8 @@
-use blobs::{perf_counters::perf_counters_new_frame, *};
-use thunderdome::{Arena, Index};
+pub use blobs::{perf_counters::perf_counters_new_frame, *};
+pub use thunderdome::{Arena, Index};
 
-use glam::*;
-use macroquad::{
+pub use glam::*;
+pub use macroquad::{
     color::colors::*,
     input::{is_key_down, is_key_pressed},
     miniquad::conf::Platform,
@@ -20,11 +20,13 @@ use macroquad::{
 mod rapier_engine;
 mod simulation;
 mod utils;
+mod demos;
 
 #[cfg(feature = "rapier")]
 pub use crate::rapier_engine::*;
 pub use crate::simulation::*;
 pub use crate::utils::*;
+pub use crate::demos::*;
 
 #[cfg(feature = "jemalloc")]
 #[global_allocator]
@@ -238,124 +240,25 @@ pub struct HoverState {
     pub position: Vec2,
 }
 
+pub struct DemoContext<'a> {
+    pub cooldowns: &'a mut Cooldowns,
+    pub mouse_world: Vec2,
+    pub delta: f64,
+}
+
 #[macroquad::main(window_conf)]
 async fn main() {
-    // let texture: Texture2D = load_texture("assets/happy-tree.png").await.unwrap();
+    let mut demo = BallsDemo::new();
+    let mut frame_index = 0;
 
-    // let gravity = vec2(0.0, -30.0);
-    let gravity = vec2(0.0, 0.0);
-
-    let mut drag: Option<DragState> = None;
-    let hover: Option<HoverState> = None;
-    // let mut sim = Simulation::new(Box::new(rapier_physics));
-
-    let mut enable_autospawn = false;
     let mut cooldowns = Cooldowns::new();
 
-    let mut frame_index = 0;
-    let mut sim = make_world(gravity);
-
-    let a = sim.balls.insert(TestObject {
-        position: Vec2::ZERO,
-        color: PINK,
-    });
-
-    let mouse_rbd = spawn_rbd_entity(
-        &mut sim.physics,
-        a,
-        RigidBodyDesc {
-            position: Vec2::ZERO,
-            body_type: RigidBodyType::Static,
-            collision_groups: groups(0, 0),
-            radius: 0.1,
-            // gravity_mod: 0.0,
-            ..Default::default()
-        },
-    );
-
-    // let pos = vec2(5.0, 5.0);
-    //
-    // let rbd = RigidBody {
-    //     position: pos,
-    //     position_old: pos,
-    //     gravity_mod: 1.0,
-    //     mass: 1.0,
-    //     velocity_request: Some(vec2(1.0, 0.)),
-    //     calculated_velocity: Vec2::ZERO,
-    //     acceleration: Vec2::ZERO,
-    //     rotation: 0.0,
-    //     scale: Vec2::ONE,
-    //     // angular_velocity: 0.0,
-    //     colliders: vec![],
-    //     user_data: 0,
-    //     connected_joints: vec![],
-    //     body_type: RigidBodyType::KinematicVelocityBased,
-    //     collision_groups: groups(0, 0),
-    // };
-    //
-    // let rbd_handle = sim.physics.insert_rbd(rbd);
-
-    let a = sim.balls.insert(TestObject {
-        position: Vec2::ZERO,
-        color: GREEN,
-    });
-
-    let torque_test_rbd = spawn_rbd_entity(
-        &mut sim.physics,
-        a,
-        RigidBodyDesc {
-            position: vec2(-2.0, 2.0),
-            body_type: RigidBodyType::Dynamic,
-            collision_groups: groups(0, 0),
-            radius: 0.1,
-            // gravity_mod: 0.0,
-            ..Default::default()
-        },
-    );
-
     loop {
-        let delta = get_frame_time();
+        let delta = get_frame_time() as f64;
         frame_index += 1;
 
-        perf_counters_new_frame(delta as f64);
-
-        let physics_time = {
-            let start = instant::now();
-
-            if frame_index > 20 {
-                sim.physics.fixed_step(delta as f64);
-            }
-
-            let end = instant::now();
-
-            #[cfg(target_arch = "wasm32")]
-            let result = (end - start);
-            #[cfg(not(target_arch = "wasm32"))]
-            let result = (end - start) / 1000.0;
-
-            result
-        };
-
-        if is_key_down(KeyCode::F1) && is_key_pressed(KeyCode::Escape) {
-            break;
-        }
-
-        if is_key_down(KeyCode::Key1) {
-            enable_autospawn = !enable_autospawn;
-        }
-
-        if is_key_down(KeyCode::Key3) {
-            let joint_iterations = sim.physics.joint_iterations;
-            let substeps = sim.physics.substeps;
-
-            sim = make_world(gravity);
-
-            sim.physics.joint_iterations = joint_iterations;
-            sim.physics.substeps = substeps;
-        }
-
         if is_key_pressed(KeyCode::Q) {
-            break;
+            std::process::exit(0);
         }
 
         let ratio = screen_width() / screen_height();
@@ -375,7 +278,6 @@ async fn main() {
         // draw_rectangle(Vec2::ZERO.as_world(), 50.0, 50.0, BLACK);
         draw_circle(Vec2::ZERO, 4.0, WHITE.alpha(0.05));
 
-        cooldowns.tick(delta);
         // for (_, rbd) in physics.rbd_set.arena.iter() {
         //     draw_circle(rbd.position, rbd.radius, RED);
         // }
@@ -390,93 +292,140 @@ async fn main() {
         let mouse_world = camera.screen_to_world(macroquad::math::vec2(mouse_x, mouse_y));
         let mouse_world = vec2(mouse_world.x, mouse_world.y);
 
-        let mut wants_ball = false;
-        let mut random_radius = false;
-        let position = random_around(vec2(1.0, 1.0), 0.1, 0.2);
+        cooldowns.tick(delta as f32);
 
-        // for (index, object) in sim.balls.iter() {
-        //     let collider = sim.physics.col_set.arena.get(index).unwrap();
-        //     let rbd_handle = collider.parent.unwrap();
-        //
-        //     let mut hovered = false;
-        //
-        //     if mouse_rbd != rbd_handle {
-        //         if mouse_world.distance(collider.absolute_translation()) < collider.radius {
-        //             hovered = true;
-        //
-        //             hover = Some(HoverState {
-        //                 index: rbd_handle,
-        //                 position: collider.absolute_translation(),
-        //             });
-        //         }
-        //     }
-        //
-        //     let color = if hovered {
-        //         RED.mix(object.color, 0.2)
-        //     } else {
-        //         object.color
-        //     };
-        //
-        //     let rbd = sim.physics.get_rbd(rbd_handle).unwrap();
-        //
-        //     draw_circle(collider.absolute_translation(), collider.radius, color);
-        //     let a = collider.absolute_translation();
-        //     let b = a + vec2(rbd.rotation.cos(), rbd.rotation.sin()) * 0.4;
-        //     draw_line(a.x, a.y, b.x, b.y, 0.05, YELLOW);
-        //
-        //     let r = collider.radius;
-        //
-        //     draw_texture_ex(
-        //         texture,
-        //         collider.absolute_translation().x - r,
-        //         collider.absolute_translation().y - r,
-        //         color.alpha(0.4),
-        //         DrawTextureParams {
-        //             dest_size: Some(macroquad::prelude::vec2(
-        //                 collider.radius * 2.0,
-        //                 collider.radius * 2.0,
-        //             )),
-        //             rotation: rbd.rotation,
-        //             ..Default::default()
-        //         },
-        //     );
-        // }
+        let mut c = DemoContext {
+            cooldowns: &mut cooldowns,
+            mouse_world,
+            delta,
+        };
 
-        {
-            let mut force = None;
+        perf_counters_new_frame(delta);
 
-            if is_key_down(KeyCode::W) {
-                force = Some(vec2(0.0, 1.0));
-            }
-            if is_key_down(KeyCode::S) {
-                force = Some(vec2(0.0, -1.0));
-            }
-            if is_key_down(KeyCode::A) {
-                force = Some(vec2(-1.0, 0.0));
-            }
-            if is_key_down(KeyCode::D) {
-                force = Some(vec2(1.0, 0.0));
-            }
-
-            let rbd = sim.physics.get_mut_rbd(torque_test_rbd).unwrap();
-
-            let force_point = if is_key_down(KeyCode::LeftShift) {
-                mouse_world
-            } else {
-                rbd.position
-            };
-
-            if let Some(force) = force {
-                rbd.apply_force_at_point(force, force_point);
-
-                let a = force_point;
-                let b = a + force;
-
-                draw_line(a.x, a.y, b.x, b.y, 0.2, RED);
-            }
+        if is_key_down(KeyCode::Key3) {
+            // TODO:
+            // let joint_iterations = self.physics.borrow_mut().joint_iterations;
+            // let substeps = self.physics.borrow_mut().substeps;
+            //
+            // sim = make_world(gravity);
+            //
+            // sim.physics.joint_iterations = joint_iterations;
+            // sim.physics.substeps = substeps;
         }
-        let debug = sim.physics.debug_data();
 
+        let physics_time = {
+            let start = instant::now();
+
+            if frame_index > 20 {
+                demo.update(&mut c);
+            }
+
+            let end = instant::now();
+
+            #[cfg(target_arch = "wasm32")]
+            let result = (end - start);
+            #[cfg(not(target_arch = "wasm32"))]
+            let result = (end - start) / 1000.0;
+
+            result
+        };
+
+        if is_key_down(KeyCode::F1) && is_key_pressed(KeyCode::Escape) {
+            break;
+        }
+
+        egui_macroquad::ui(|ctx| {
+            ctx.set_pixels_per_point(1.5);
+
+            let mut physics = demo.physics_mut();
+            let physics= &mut *physics;
+
+            egui::Window::new("Physics Parameters").show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("substeps");
+                    ui.add(egui::DragValue::new(&mut physics.substeps));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("joint iterations");
+                    ui.add(egui::DragValue::new(&mut physics.joint_iterations));
+                });
+            });
+
+            egui::Window::new("Performance")
+                .anchor(egui::Align2::RIGHT_BOTTOM, egui::vec2(0.0, 0.0))
+                .default_width(250.0)
+                .show(ctx, |ui| {
+                    ui.label(format!("FPS: {}", get_fps()));
+                    ui.label(format!("Physics: {:0.6}", physics_time));
+
+                    ui.separator();
+
+                    if physics.rbd_set.len() > 0 {
+                        ui.label(format!("Rigid Bodies: {}", physics.rbd_set.len()));
+                        ui.label(format!("Colliders: {}", physics.col_set.len()));
+
+                        ui.separator();
+                    }
+
+                    // Display performance counters
+                    ui.label("Perf Counters");
+                    for (counter_name, counter) in
+                        perf_counters::PerfCounters::global().counters.iter()
+                    {
+                        ui.label(format!(
+                            "{:<15}: {:<15.0}",
+                            counter_name, counter.decayed_average,
+                        ));
+                    }
+
+                    // #[cfg(not(target_arch = "wasm32"))]
+                    // {
+                    //     let _span = tracy_span!("memory_stats");
+                    //
+                    //     if let Some(usage) = memory_stats::memory_stats() {
+                    //         ui.label(format!(
+                    //             "Physical Mem: {} MB",
+                    //             usage.physical_mem / (1024 * 1024)
+                    //         ));
+                    //         ui.label(format!(
+                    //             "Virtual Mem: {} MB",
+                    //             usage.virtual_mem / (1024 * 1024)
+                    //         ));
+                    //     } else {
+                    //         ui.label(format!(
+                    //             "Couldn't get the current memory usage :("
+                    //         ));
+                    //     }
+                    // }
+
+                    #[cfg(feature = "jemalloc")]
+                    {
+                        let _span = blobs::tracy_span!("jemalloc stats");
+                        ui.separator();
+
+                        ui.label("jemalloc");
+
+                        jemalloc_ctl::epoch::advance().unwrap();
+
+                        let allocated = jemalloc_ctl::stats::allocated::read().unwrap();
+                        let resident = jemalloc_ctl::stats::resident::read().unwrap();
+                        ui.label(format!("{} MB allocated", allocated / (1024 * 1024)));
+                        ui.label(format!("{} MB resident", resident / (1024 * 1024)));
+                    }
+                });
+
+        });
+
+        debug_draw_physics(demo.debug_data(), mouse_world);
+
+        egui_macroquad::draw();
+
+        next_frame().await
+    }
+}
+
+    pub fn debug_draw_physics(debug: DebugData, mouse_world: Vec2) {
         for collider in debug.colliders.iter() {
             draw_circle(collider.transform.translation, collider.radius, BLUE);
 
@@ -535,206 +484,4 @@ async fn main() {
                 YELLOW.alpha(0.5),
             );
         }
-
-        // draw_circle(mouse_world, 0.3, WHITE);
-
-        // draw_circle(vec2(1.0, 1.0), 1.0, RED);
-        // draw_circle(vec2(1.0, -1.0), 1.0, GREEN);
-        // draw_circle(vec2(-1.0, -1.0), 1.0, BLUE);
-        // draw_circle(vec2(-1.0, 1.0), 1.0, YELLOW);
-
-        egui_macroquad::ui(|ctx| {
-            ctx.set_pixels_per_point(1.5);
-
-            egui::Window::new("Physics Parameters").show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label("substeps");
-                    ui.add(egui::DragValue::new(&mut sim.physics.substeps));
-                });
-
-                ui.horizontal(|ui| {
-                    ui.label("joint iterations");
-                    ui.add(egui::DragValue::new(&mut sim.physics.joint_iterations));
-                });
-            });
-
-            egui::Window::new("Performance")
-                .anchor(egui::Align2::RIGHT_BOTTOM, egui::vec2(0.0, 0.0))
-                .default_width(250.0)
-                .show(ctx, |ui| {
-                    ui.label(format!("FPS: {}", get_fps()));
-                    ui.label(format!("Physics: {:0.6}", physics_time));
-
-                    ui.separator();
-
-                    if sim.physics.rbd_set.len() > 0 {
-                        ui.label(format!("Rigid Bodies: {}", sim.physics.rbd_set.len()));
-                        ui.label(format!("Colliders: {}", sim.collider_count()));
-
-                        ui.separator();
-                    }
-
-                    // Display performance counters
-                    ui.label("Perf Counters");
-                    for (counter_name, counter) in
-                        perf_counters::PerfCounters::global().counters.iter()
-                    {
-                        ui.label(format!(
-                            "{:<15}: {:<15.0}",
-                            counter_name, counter.decayed_average,
-                        ));
-                    }
-
-                    // #[cfg(not(target_arch = "wasm32"))]
-                    // {
-                    //     let _span = tracy_span!("memory_stats");
-                    //
-                    //     if let Some(usage) = memory_stats::memory_stats() {
-                    //         ui.label(format!(
-                    //             "Physical Mem: {} MB",
-                    //             usage.physical_mem / (1024 * 1024)
-                    //         ));
-                    //         ui.label(format!(
-                    //             "Virtual Mem: {} MB",
-                    //             usage.virtual_mem / (1024 * 1024)
-                    //         ));
-                    //     } else {
-                    //         ui.label(format!(
-                    //             "Couldn't get the current memory usage :("
-                    //         ));
-                    //     }
-                    // }
-
-                    #[cfg(feature = "jemalloc")]
-                    {
-                        let _span = blobs::tracy_span!("jemalloc stats");
-                        ui.separator();
-
-                        ui.label("jemalloc");
-
-                        jemalloc_ctl::epoch::advance().unwrap();
-
-                        let allocated = jemalloc_ctl::stats::allocated::read().unwrap();
-                        let resident = jemalloc_ctl::stats::resident::read().unwrap();
-                        ui.label(format!("{} MB allocated", allocated / (1024 * 1024)));
-                        ui.label(format!("{} MB resident", resident / (1024 * 1024)));
-                    }
-                });
-
-            if !ctx.wants_pointer_input() {
-                // if is_mouse_button_down(MouseButton::Left) {
-                //     if cooldowns.can_use("ball", 0.005) {
-                //         wants_ball = true;
-                //         random_radius = true;
-                //         position = mouse_world;
-                //     }
-                // }
-
-                if let Some(hover) = hover {
-                    if drag.is_none() && is_mouse_button_pressed(MouseButton::Left) {
-                        let spring = sim.physics.springs.insert(Spring {
-                            rigid_body_a: hover.index,
-                            rigid_body_b: mouse_rbd,
-                            rest_length: 1.0,
-                            stiffness: 1000.0,
-                            damping: 50.0,
-                        });
-
-                        drag = Some(DragState {
-                            spring: SpringHandle(spring),
-                            index: hover.index,
-                            start: hover.position,
-                            offset: mouse_world - hover.position,
-                        });
-                    }
-                }
-
-                if is_mouse_button_released(MouseButton::Left) {
-                    if let Some(drag) = drag {
-                        sim.physics.springs.remove(*drag.spring);
-                    }
-
-                    drag = None;
-                }
-
-                sim.physics.rbd_set.get_mut(mouse_rbd).unwrap().position = mouse_world;
-
-                if let Some(_drag) = drag {
-                    if is_mouse_button_down(MouseButton::Left) {
-                        // let blobs = sim.cast_physics::<blobs::Physics>();
-
-                        // let rbd = blobs.rbd_set.arena.get_mut(drag.index.0).unwrap();
-
-                        // rbd.position = drag.start + mouse_world - drag.offset;
-                        // rbd.position = mouse_world;
-                    }
-                }
-
-                if is_mouse_button_pressed(MouseButton::Right) {
-                    random_radius = false;
-                    wants_ball = true;
-                }
-
-                // if is_mouse_button_pressed(macroquad::prelude::MouseButton::Left) {
-                //     sim.spawn_ball(
-                //         RigidBodyDesc {
-                //             position: vec2(gen_range(-2.0, 2.0), gen_range(-2.0, 2.0)),
-                //             initial_velocity: Some(vec2(5.0, 2.0)),
-                //             radius: 0.5,
-                //             mass: 1.0,
-                //             is_sensor: false,
-                //             ..Default::default()
-                //         },
-                //         RED,
-                //     );
-                //
-                //     // spawn_rbd_entity(
-                //     //     &mut physics,
-                //     // );
-                // }
-            }
-        });
-
-        if sim.body_count() < 200 && enable_autospawn {
-            if cooldowns.can_use("ball", 0.1) {
-                wants_ball = true;
-            }
-        }
-
-        if wants_ball {
-            sim.spawn_ball(
-                RigidBodyDesc {
-                    position,
-                    initial_velocity: Some(random_circle(3.0)),
-                    radius: if random_radius {
-                        gen_range(0.05, 0.2)
-                    } else {
-                        gen_range(0.05, 0.1)
-                    },
-                    mass: 1.0,
-                    is_sensor: false,
-                    ..Default::default()
-                },
-                RED,
-            );
-
-            // physics.spawn_kinematic_ball(
-            //     world,
-            //     c.commands,
-            //     if random_radius {
-            //         gen_range(0.05, 0.2)
-            //     } else {
-            //         gen_range(0.05, 0.1)
-            //     },
-            //     position,
-            //     Some(random_vec(1.0, 50.0)),
-            //     groups(1, 1),
-            //     (Sprite::new("1px".to_string(), splat(0.0), 0, RED),),
-            // );
-        }
-
-        egui_macroquad::draw();
-
-        next_frame().await
-    }
 }

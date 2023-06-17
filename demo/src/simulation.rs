@@ -1,5 +1,51 @@
 use crate::*;
 
+pub use std::cell::RefCell;
+pub use std::ops::{Deref, DerefMut};
+pub use std::rc::Rc;
+pub use std::{cell::Ref, cell::RefMut};
+
+pub struct OwnedRigidBodyHandle {
+    pub handle: RigidBodyHandle,
+    pub physics: Rc<RefCell<Physics>>,
+}
+
+impl OwnedRigidBodyHandle {
+    pub fn deref(&self) -> impl Deref<Target = RigidBody> + '_ {
+        Ref::map(self.physics.borrow(), |x| {
+            x.rbd_set.get(self.handle).unwrap()
+        })
+    }
+
+    pub fn deref_mut(&self) -> impl DerefMut<Target = RigidBody> + '_ {
+        RefMut::map(self.physics.borrow_mut(), |x| {
+            x.rbd_set.get_mut(self.handle).unwrap()
+        })
+    }
+}
+
+impl Drop for OwnedRigidBodyHandle {
+    fn drop(&mut self) {
+        self.physics.borrow_mut().remove_rbd(self.handle);
+    }
+}
+
+pub struct OwnedColliderHandle {
+    pub handle: ColliderHandle,
+    pub physics: Rc<RefCell<Physics>>,
+}
+
+impl Drop for OwnedColliderHandle {
+    fn drop(&mut self) {
+        self.physics.borrow_mut().remove_col(self.handle);
+    }
+}
+
+pub struct GameObject {
+    pub collider: Option<OwnedColliderHandle>,
+    pub rbd: Option<OwnedRigidBodyHandle>,
+}
+
 pub struct TestObject {
     pub position: Vec2,
     pub color: Color,
@@ -7,14 +53,14 @@ pub struct TestObject {
 
 pub struct Simulation {
     pub balls: Arena<TestObject>,
-    pub physics: Physics,
+    pub physics: Rc<RefCell<Physics>>,
 }
 
 impl Simulation {
     pub fn new(physics: Physics) -> Self {
         Self {
             balls: Arena::new(),
-            physics,
+            physics: Rc::new(RefCell::new(physics)),
         }
     }
 
@@ -23,7 +69,7 @@ impl Simulation {
     }
 
     pub fn collider_count(&self) -> usize {
-        self.physics.col_set.len()
+        self.physics.borrow().col_set.len()
     }
 
     pub fn spawn_ball(&mut self, desc: RigidBodyDesc, color: Color) {
@@ -31,7 +77,7 @@ impl Simulation {
             position: Vec2::ZERO,
             color,
         });
-        spawn_rbd_entity(&mut self.physics, id, desc);
+        spawn_rbd_entity(&mut self.physics.borrow_mut(), id, desc);
     }
 }
 

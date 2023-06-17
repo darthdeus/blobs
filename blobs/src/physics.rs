@@ -339,8 +339,7 @@ impl Physics {
             let displacement = (body.position - body.position_old) * (dt / self.old_dt);
             self.old_dt = dt;
 
-            self.spatial_hash
-                .move_point(idx.to_bits(), displacement);
+            self.spatial_hash.move_point(idx.to_bits(), displacement);
 
             body.position_old = body.position;
             body.position += displacement + body.acceleration * dt * dt;
