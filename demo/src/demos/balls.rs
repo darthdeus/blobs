@@ -7,6 +7,8 @@ pub struct BallsDemo {
     pub sim: Simulation,
     pub drag: Option<DragState>,
     pub hover: Option<HoverState>,
+
+    pub mouse_rbd: RigidBodyHandle,
 }
 
 impl BallsDemo {
@@ -18,10 +20,10 @@ impl BallsDemo {
 
         let mut sim = make_world(gravity);
 
-        let a = sim.balls.insert(TestObject {
-            position: Vec2::ZERO,
-            color: PINK,
-        });
+        // let a = sim.balls.insert(TestObject {
+        //     position: Vec2::ZERO,
+        //     color: PINK,
+        // });
 
         let mouse_rbd = sim.spawn_ball(
             RigidBodyDesc {
@@ -57,10 +59,10 @@ impl BallsDemo {
         //
         // let rbd_handle = sim.physics.insert_rbd(rbd);
 
-        let a = sim.balls.insert(TestObject {
-            position: Vec2::ZERO,
-            color: GREEN,
-        });
+        // let a = sim.balls.insert(TestObject {
+        //     position: Vec2::ZERO,
+        //     color: GREEN,
+        // });
 
         // let torque_test_rbd = spawn_rbd_entity(
         //     &mut sim.physics,
@@ -82,6 +84,8 @@ impl BallsDemo {
             sim,
             drag: None,
             hover: None,
+
+            mouse_rbd,
         }
     }
 
