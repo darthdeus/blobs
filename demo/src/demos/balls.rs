@@ -13,17 +13,7 @@ pub struct BallsDemo {
 
 impl BallsDemo {
     pub fn new() -> Self {
-        // let gravity = vec2(0.0, -30.0);
-        let gravity = vec2(0.0, 0.0);
-
-        // let mut sim = Simulation::new(Box::new(rapier_physics));
-
-        let mut sim = make_world(gravity);
-
-        // let a = sim.balls.insert(TestObject {
-        //     position: Vec2::ZERO,
-        //     color: PINK,
-        // });
+        let mut sim = make_world(vec2(0.0, -30.0));
 
         let mouse_rbd = sim.spawn_ball(
             RigidBodyDesc {

@@ -87,23 +87,6 @@ impl Simulation {
 pub fn rbd_from_desc(id: Index, desc: RigidBodyDesc) -> RigidBody {
     let user_data: u128 = id.to_bits() as u128;
 
-    // RigidBody {
-    //     position: desc.position,
-    //     position_old: desc.position,
-    //     mass: desc.mass,
-    //     gravity_mod: desc.gravity_mod,
-    //     velocity_request: desc.initial_velocity,
-    //     calculated_velocity: Vec2::ZERO,
-    //     acceleration: Vec2::ZERO,
-    //     rotation: 0.0,
-    //     scale: Vec2::ONE,
-    //     // angular_velocity: 0.0,
-    //     colliders: vec![],
-    //     connected_joints: vec![],
-    //     user_data,
-    //     body_type: desc.body_type,
-    // }
-
     RigidBodyBuilder::new()
         .position(desc.position)
         .gravity_mod(desc.gravity_mod)

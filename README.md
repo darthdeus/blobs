@@ -7,15 +7,17 @@
 
 `blobs` is a rigid body physics engine written in Rust with only a few dependencies, most notably using `glam` instead of `nalgebra`.
 
-**Currently under heavy development. While the library is being used in
-real projects it's still undergoing heavy changes.**
+**Currently under heavy development. While the library is being used in a few
+projects it's still undergoing heavy changes.**
 
 ## Features
 
 - 2D rigid body physics with verlet integration
-- Simple & stable
-- Fast
-- Fast compile times
+- Simple & fast compile times
+- Multi-collider bodies
+- Fixed joints & springs
+- Sphere colliders only for now
+- Works in WASM
 
 ## License
 

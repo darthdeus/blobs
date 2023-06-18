@@ -118,3 +118,11 @@
         //     // );
         // }
         // }
+
+        // for (_, rbd) in physics.rbd_set.arena.iter() {
+        //     draw_circle(rbd.position, rbd.radius, RED);
+        // }
+
+        // for (_, body) in sim.physics.rbd_set.arena.iter_mut() {
+        //     body.rotation += 1.0 * delta;
+        // }

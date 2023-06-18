@@ -87,7 +87,7 @@ impl Default for ColliderFlags {
 pub struct ColliderSet {
     time_data: Rc<TimeData>,
 
-    arena: Arena<Collider>,
+    pub arena: Arena<Collider>,
 
     pub group_arenas: HashMap<Group, Arena<ColliderHandle>>,
 }

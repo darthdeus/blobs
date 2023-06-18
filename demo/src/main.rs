@@ -175,6 +175,7 @@ async fn main() {
     let mut frame_index = 0;
 
     let mut cooldowns = Cooldowns::new();
+    let mut draw_bodies = false;
 
     loop {
         let delta = get_frame_time() as f64;
@@ -182,6 +183,10 @@ async fn main() {
 
         if is_key_pressed(KeyCode::Q) {
             std::process::exit(0);
+        }
+
+        if is_key_pressed(KeyCode::E) {
+            draw_bodies = !draw_bodies;
         }
 
         let ratio = screen_width() / screen_height();
@@ -200,14 +205,6 @@ async fn main() {
 
         // draw_rectangle(Vec2::ZERO.as_world(), 50.0, 50.0, BLACK);
         draw_circle(Vec2::ZERO, 4.0, WHITE.alpha(0.05));
-
-        // for (_, rbd) in physics.rbd_set.arena.iter() {
-        //     draw_circle(rbd.position, rbd.radius, RED);
-        // }
-
-        // for (_, body) in sim.physics.rbd_set.arena.iter_mut() {
-        //     body.rotation += 1.0 * delta;
-        // }
 
         let (mouse_x, mouse_y) = mouse_position();
         let _mouse_screen = vec2(mouse_x, mouse_y);
@@ -302,25 +299,25 @@ async fn main() {
                         ));
                     }
 
-                    // #[cfg(not(target_arch = "wasm32"))]
-                    // {
-                    //     let _span = tracy_span!("memory_stats");
-                    //
-                    //     if let Some(usage) = memory_stats::memory_stats() {
-                    //         ui.label(format!(
-                    //             "Physical Mem: {} MB",
-                    //             usage.physical_mem / (1024 * 1024)
-                    //         ));
-                    //         ui.label(format!(
-                    //             "Virtual Mem: {} MB",
-                    //             usage.virtual_mem / (1024 * 1024)
-                    //         ));
-                    //     } else {
-                    //         ui.label(format!(
-                    //             "Couldn't get the current memory usage :("
-                    //         ));
-                    //     }
-                    // }
+                    #[cfg(all(feature = "memory-stats", not(target_arch = "wasm32")))]
+                    {
+                        let _span = tracy_span!("memory_stats");
+                    
+                        if let Some(usage) = memory_stats::memory_stats() {
+                            ui.label(format!(
+                                "Physical Mem: {} MB",
+                                usage.physical_mem / (1024 * 1024)
+                            ));
+                            ui.label(format!(
+                                "Virtual Mem: {} MB",
+                                usage.virtual_mem / (1024 * 1024)
+                            ));
+                        } else {
+                            ui.label(format!(
+                                "Couldn't get the current memory usage :("
+                            ));
+                        }
+                    }
 
                     #[cfg(feature = "jemalloc")]
                     {
@@ -340,7 +337,7 @@ async fn main() {
 
         });
 
-        debug_draw_physics(demo.debug_data(), mouse_world);
+        debug_draw_physics(demo.debug_data(), mouse_world, draw_bodies);
 
         egui_macroquad::draw();
 
@@ -348,7 +345,7 @@ async fn main() {
     }
 }
 
-    pub fn debug_draw_physics(debug: DebugData, mouse_world: Vec2) {
+    pub fn debug_draw_physics(debug: DebugData, mouse_world: Vec2, draw_bodies: bool) {
         for collider in debug.colliders.iter() {
             draw_circle(collider.transform.translation, collider.radius, BLUE);
 
@@ -372,18 +369,20 @@ async fn main() {
             // );
         }
 
-        for body in debug.bodies.iter() {
-            if body.transform.translation.distance(mouse_world) < 0.1 {
-                continue;
+        if draw_bodies {
+            for body in debug.bodies.iter() {
+                if body.transform.translation.distance(mouse_world) < 0.1 {
+                    continue;
+                }
+
+                let r = 0.5;
+                draw_circle(body.transform.translation, r, PINK.alpha(0.5));
+
+                let a = body.transform.translation;
+                let b = a + body.transform.angle_dir() * r;
+
+                draw_line(a.x, a.y, b.x, b.y, 0.05, DARKBLUE);
             }
-
-            let r = 0.5;
-            draw_circle(body.transform.translation, r, PINK.alpha(0.5));
-
-            let a = body.transform.translation;
-            let b = a + body.transform.angle_dir() * r;
-
-            draw_line(a.x, a.y, b.x, b.y, 0.05, DARKBLUE);
         }
 
         for spring in debug.springs.iter() {
