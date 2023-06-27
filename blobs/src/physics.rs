@@ -537,11 +537,13 @@ impl Physics {
                         count += 1;
 
                         self.collision_send
-                            .send(CollisionEvent::Started(
-                                ColliderHandle(*idx_a),
-                                ColliderHandle(idx_b),
-                                CollisionEventFlags::empty(),
-                            ))
+                            .send(CollisionEvent {
+                                col_handle_a: ColliderHandle(*idx_a),
+                                col_handle_b: ColliderHandle(idx_b),
+
+                                impact_vel_a: rbd_a.calculated_velocity,
+                                impact_vel_b: rbd_b.calculated_velocity,
+                            })
                             .unwrap();
                     }
                 }
