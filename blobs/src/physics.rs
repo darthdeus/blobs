@@ -21,7 +21,6 @@ pub struct Physics {
 
     pub collision_send: Sender<CollisionEvent>,
     pub collision_recv: Receiver<CollisionEvent>,
-    // pub contact_force_recv: Receiver<ContactForceEvent>,
 
     // Quick way to disable all collision calculations,
     // useful for testing/measurements.
@@ -76,7 +75,6 @@ impl Physics {
         self.time += delta;
     }
 
-    // TODO: ????
     pub fn fixed_step(&mut self, frame_time: f64) {
         let _span = tracy_span!("step");
         self.accumulator += frame_time;
@@ -116,7 +114,6 @@ impl Physics {
 
     pub fn insert_rbd(&mut self, rbd: RigidBody) -> RigidBodyHandle {
         let position = rbd.position;
-        // let radius = rbd.radius;
 
         let handle = self.rbd_set.insert(rbd);
         self.spatial_hash
@@ -298,10 +295,6 @@ impl Physics {
 
                     count += 1;
 
-                    // if col_a.flags.is_sensor || col_b.flags.is_sensor {
-                    //     continue;
-                    // }
-
                     self.collision_send
                         .send(CollisionEvent {
                             col_handle_a: *idx_a,
@@ -410,7 +403,6 @@ impl Physics {
 
             if self.collisions_enabled {
                 if self.use_spatial_hash {
-                    // self.spatial_collisions();
                     panic!("spatial collisions not supported right now");
                 } else {
                     self.brute_force_collisions();
@@ -423,41 +415,7 @@ impl Physics {
         }
     }
 
-    // fn solve_fixed_joints(&mut self, dt: f32) {
-    //     let iterations = 40;
-    //     let inv_dt = 1.0 / dt;
-    //
-    //     for _ in 0..iterations {
-    //         for (_, joint) in self.joints.iter() {
-    //             let (body_a, body_b) = self
-    //                 .rbd_set
-    //                 .arena
-    //                 .get2_mut(joint.rigid_body_a.0, joint.rigid_body_b.0)
-    //                 .zip()
-    //                 .unwrap();
-    //
-    //             let world_anchor_a = body_a.position + joint.anchor_a;
-    //             let world_anchor_b = body_b.position + joint.anchor_b;
-    //
-    //             let delta_position = world_anchor_b - world_anchor_a;
-    //             let distance = delta_position.length();
-    //
-    //             if distance < 1e-6 {
-    //                 continue;
-    //             }
-    //
-    //             let correction = dt * (distance - joint.distance) * delta_position / distance;
-    //             let inv_mass_sum = body_a.mass.recip() + body_b.mass.recip();
-    //
-    //             body_a.position += body_a.mass.recip() / inv_mass_sum * correction * 0.5;
-    //             body_b.position -= body_b.mass.recip() / inv_mass_sum * correction * 0.5;
-    //         }
-    //     }
-    // }
-
     fn solve_fixed_joints(&mut self, dt: f32) {
-        // let inv_dt = 1.0 / dt;
-
         for _ in 0..self.joint_iterations {
             for (_, joint) in self.joints.iter() {
                 let (body_a, body_b) = self
@@ -496,14 +454,6 @@ impl Physics {
                     body_b.position -= (1.0 - ratio) * correction;
                 }
 
-                // let angle_correction_a =
-                //     delta_position.perp_dot(correction) / delta_position.length_squared();
-                // let angle_correction_b =
-                //     (-delta_position).perp_dot(correction) / delta_position.length_squared();
-                //
-                // assert!(angle_correction_a.is_finite());
-                // assert!(angle_correction_b.is_finite());
-
                 let angle_a = delta_position.y.atan2(delta_position.x);
                 let angle_b = -delta_position.y.atan2(-delta_position.x);
                 let angle_diff = angle_b - angle_a - joint.target_angle;
@@ -511,19 +461,6 @@ impl Physics {
 
                 body_a.rotation += rotation_correction * dt;
                 body_b.rotation -= rotation_correction * dt;
-                // println!("rotations: {} {}", body_a.rotation, body_b.rotation);
-
-                // let rotation_stiffness = 10.0;
-                // let angle_diff = body_b.rotation - body_a.rotation - joint.target_angle;
-                // let torque = angle_diff * rotation_stiffness;
-                //
-                // if !body_a.is_static() {
-                //     body_a.rotation -= torque * dt;
-                // }
-                //
-                // if !body_b.is_static() {
-                //     body_b.rotation += torque * dt;
-                // }
 
                 assert!(!body_a.rotation.is_nan());
                 assert!(!body_b.rotation.is_nan());
@@ -537,80 +474,80 @@ impl Physics {
         make_debug_data(self)
     }
 
-    // pub fn spatial_collisions(&mut self) {
-    //     panic!("spatial_collisions BREAKS COLLISIONS, use brute force");
-    //     let _span = tracy_span!("spatial_collisions");
-    //
-    //     let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
-    //     let mut count = 0;
-    //
-    //     for (_i, idx_a) in keys.iter().enumerate() {
-    //         let col_a = self.col_set.arena.get(*idx_a).unwrap();
-    //         let parent_a = col_a.parent.unwrap();
-    //         let rbd_a = self.rbd_set.arena.get(parent_a.0).unwrap();
-    //
-    //         const MAX_COLLIDER_RADIUS: f32 = 1.0;
-    //
-    //         let relevant_rigid_bodies = self
-    //             .spatial_hash
-    //             .query(rbd_a.position, col_a.radius + MAX_COLLIDER_RADIUS);
-    //
-    //         // for idx_b in keys.iter() {
-    //         //     let idx_b = *idx_b;
-    //         for cell_point in relevant_rigid_bodies {
-    //             let idx_b = Index::from_bits(cell_point.id).unwrap();
-    //
-    //             if let Some(col_b) = self.col_set.arena.get(idx_b) {
-    //                 if idx_a >= &idx_b {
-    //                     continue;
-    //                 }
-    //
-    //                 let parent_b = col_b.parent.unwrap();
-    //                 // let rbd_b =
-    //                 //     self.rbd_set.arena.get(parent_b.handle.0).unwrap();
-    //
-    //                 if !col_a.collision_groups.test(col_b.collision_groups) {
-    //                     continue;
-    //                 }
-    //
-    //                 let axis = col_a.absolute_translation() - col_b.absolute_translation();
-    //                 let distance = axis.length();
-    //                 let min_dist = col_a.radius + col_b.radius;
-    //
-    //                 if distance < min_dist {
-    //                     let parent_a_handle = parent_a.0;
-    //                     let parent_b_handle = parent_b.0;
-    //
-    //                     let (Some(rbd_a), Some(rbd_b)) = self
-    //                         .rbd_set
-    //                         .arena
-    //                         .get2_mut(parent_a_handle, parent_b_handle)
-    //                          else { continue; };
-    //
-    //                     if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
-    //                         let n = axis / distance;
-    //                         let delta = min_dist - distance;
-    //
-    //                         let ratio = Self::mass_ratio(rbd_a, rbd_b);
-    //
-    //                         rbd_a.position += ratio * delta * n;
-    //                         rbd_b.position -= (1.0 - ratio) * delta * n;
-    //                     }
-    //
-    //                     count += 1;
-    //
-    //                     self.collision_send
-    //                         .send(CollisionEvent::Started(
-    //                             ColliderHandle(*idx_a),
-    //                             ColliderHandle(idx_b),
-    //                             CollisionEventFlags::empty(),
-    //                         ))
-    //                         .unwrap();
-    //                 }
-    //             }
-    //         }
-    //     }
-    //
-    //     perf_counter_inc("collisions", count);
-    // }
+    pub fn spatial_collisions(&mut self) {
+        panic!("spatial_collisions currently broken, use brute_force instead");
+        let _span = tracy_span!("spatial_collisions");
+
+        let keys = self.col_set.arena.iter().map(|(idx, _)| idx).collect_vec();
+        let mut count = 0;
+
+        for (_i, idx_a) in keys.iter().enumerate() {
+            let col_a = self.col_set.arena.get(*idx_a).unwrap();
+            let parent_a = col_a.parent.unwrap();
+            let rbd_a = self.rbd_set.arena.get(parent_a.0).unwrap();
+
+            const MAX_COLLIDER_RADIUS: f32 = 1.0;
+
+            let relevant_rigid_bodies = self
+                .spatial_hash
+                .query(rbd_a.position, col_a.radius + MAX_COLLIDER_RADIUS);
+
+            // for idx_b in keys.iter() {
+            //     let idx_b = *idx_b;
+            for cell_point in relevant_rigid_bodies {
+                let idx_b = Index::from_bits(cell_point.id).unwrap();
+
+                if let Some(col_b) = self.col_set.arena.get(idx_b) {
+                    if idx_a >= &idx_b {
+                        continue;
+                    }
+
+                    let parent_b = col_b.parent.unwrap();
+                    // let rbd_b =
+                    //     self.rbd_set.arena.get(parent_b.handle.0).unwrap();
+
+                    if !col_a.collision_groups.test(col_b.collision_groups) {
+                        continue;
+                    }
+
+                    let axis = col_a.absolute_translation() - col_b.absolute_translation();
+                    let distance = axis.length();
+                    let min_dist = col_a.radius + col_b.radius;
+
+                    if distance < min_dist {
+                        let parent_a_handle = parent_a.0;
+                        let parent_b_handle = parent_b.0;
+
+                        let (Some(rbd_a), Some(rbd_b)) = self
+                            .rbd_set
+                            .arena
+                            .get2_mut(parent_a_handle, parent_b_handle)
+                             else { continue; };
+
+                        if !col_a.flags.is_sensor && !col_b.flags.is_sensor {
+                            let n = axis / distance;
+                            let delta = min_dist - distance;
+
+                            let ratio = Self::mass_ratio(rbd_a, rbd_b);
+
+                            rbd_a.position += ratio * delta * n;
+                            rbd_b.position -= (1.0 - ratio) * delta * n;
+                        }
+
+                        count += 1;
+
+                        self.collision_send
+                            .send(CollisionEvent::Started(
+                                ColliderHandle(*idx_a),
+                                ColliderHandle(idx_b),
+                                CollisionEventFlags::empty(),
+                            ))
+                            .unwrap();
+                    }
+                }
+            }
+        }
+
+        perf_counter_inc("collisions", count);
+    }
 }
