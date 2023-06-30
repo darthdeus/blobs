@@ -165,10 +165,12 @@ impl ColliderSet {
 
     pub fn insert_with_parent(
         &mut self,
-        collider: Collider,
+        mut collider: Collider,
         rbd_handle: RigidBodyHandle,
         rbd_set: &mut RigidBodySet,
     ) -> ColliderHandle {
+        collider.parent = Some(rbd_handle);
+
         let col_group = collider.collision_groups.memberships;
 
         let col_handle = self.arena.insert(collider);
