@@ -117,7 +117,7 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "blobs"
-version = "0.0.1"
+version = "0.2.0"
 dependencies = [
  "approx",
  "assert_approx_eq",
@@ -125,7 +125,7 @@ dependencies = [
  "bitflags",
  "bvh-arena",
  "criterion",
- "glam 0.23.0",
+ "glam 0.24.1",
  "grids",
  "itertools",
  "log",
@@ -414,7 +414,7 @@ dependencies = [
  "blobs",
  "egui",
  "egui-macroquad",
- "glam 0.23.0",
+ "glam 0.24.1",
  "grids",
  "hecs",
  "instant",
@@ -589,20 +589,20 @@ checksum = "518faa5064866338b013ff9b2350dc318e14cc4fcd6cb8206d7e7c9886c98815"
 
 [[package]]
 name = "glam"
-version = "0.23.0"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e4afd9ad95555081e109fe1d21f2a30c691b5f0919c67dfa690a2e1eb6bd51c"
+checksum = "42218cb640844e3872cc3c153dc975229e080a6c4733b34709ef445610550226"
 dependencies = [
  "approx",
 ]
 
 [[package]]
 name = "grids"
-version = "0.1.4"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c27d7770bb8b758d11a86edb354f296d8252fba4c6b41cbbdc142be64e0fdc6"
+checksum = "6bbbce111545cc6f21e217dc62e60c10486b861c68c79f0eeb9879ce08d123a0"
 dependencies = [
- "glam 0.23.0",
+ "glam 0.24.1",
 ]
 
 [[package]]
