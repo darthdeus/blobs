@@ -68,6 +68,13 @@ impl Physics {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.rbd_set.arena.clear();
+        self.col_set.arena.clear();
+        self.joints.clear();
+        self.springs.clear();
+    }
+
     pub fn step(&mut self, delta: f64) {
         let _span = tracy_span!("step");
         self.integrate(self.substeps, delta as f32);
