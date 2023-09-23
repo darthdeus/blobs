@@ -68,7 +68,6 @@ impl Physics {
         }
     }
 
-    #[deprecated]
     pub fn step(&mut self, delta: f64) {
         let _span = tracy_span!("step");
         self.integrate(self.substeps, delta as f32);
