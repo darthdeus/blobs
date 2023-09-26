@@ -4,6 +4,7 @@ version = "0.2.1"
 edition = "2021"
 license = "MIT"
 description = "NOT-Soft body physics in 2D"
+repository = "https://github.com/darthdeus/blobs"
 
 [features]
 default = []
