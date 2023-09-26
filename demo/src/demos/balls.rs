@@ -101,6 +101,10 @@ impl Demo for BallsDemo {
         let mut wants_ball = false;
         let position = random_around(vec2(1.0, 1.0), 0.1, 0.2);
 
+        while let Ok(_) = physics.collision_recv.try_recv() {
+            // Drain collision events
+        }
+
         // for (index, object) in sim.balls.iter() {
         //     let collider = sim.physics.col_set.arena.get(index).unwrap();
         //     let rbd_handle = collider.parent.unwrap();
@@ -156,23 +160,25 @@ impl Demo for BallsDemo {
         }
 
         if wants_ball {
-            spawn_rbd_entity(
-                physics,
-                // Just temporarily for now
-                thunderdome::Index::from_bits(1 << 32).unwrap(),
-                RigidBodyDesc {
-                    position,
-                    initial_velocity: Some(random_circle(3.0)),
-                    radius: if self.random_radius {
-                        gen_range(0.05, 0.2)
-                    } else {
-                        gen_range(0.05, 0.1)
+            for _ in 0..20 {
+                spawn_rbd_entity(
+                    physics,
+                    // Just temporarily for now
+                    thunderdome::Index::from_bits(1 << 32).unwrap(),
+                    RigidBodyDesc {
+                        position,
+                        initial_velocity: Some(random_circle(3.0)),
+                        radius: if self.random_radius {
+                            gen_range(0.05, 0.2)
+                        } else {
+                            gen_range(0.05, 0.1)
+                        },
+                        mass: 1.0,
+                        is_sensor: false,
+                        ..Default::default()
                     },
-                    mass: 1.0,
-                    is_sensor: false,
-                    ..Default::default()
-                },
-            );
+                );
+            }
 
             // physics.spawn_kinematic_ball(
             //     world,
